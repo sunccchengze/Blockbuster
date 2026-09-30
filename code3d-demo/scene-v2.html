@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="utf-8">
+<title>code3d v2 — f(t) → frames → mp4</title>
+<style>
+  html, body { margin:0; padding:0; width:1280px; height:720px; overflow:hidden; background:#04060c; }
+  #c { display:block; width:1280px; height:720px; }
+  .ov { position:fixed; pointer-events:none; }
+  #flash { inset:0; background:#dcefff; opacity:0; mix-blend-mode:screen; }
+  .brk { width:26px; height:26px; border:0 solid rgba(190,222,255,.42); }
+  #b1 { top:22px; left:22px; border-top-width:2px; border-left-width:2px; }
+  #b2 { top:22px; right:22px; border-top-width:2px; border-right-width:2px; }
+  #b3 { bottom:62px; left:22px; border-bottom-width:2px; border-left-width:2px; }
+  #b4 { bottom:62px; right:22px; border-bottom-width:2px; border-right-width:2px; }
+  #tag { top:26px; left:60px; font:500 13px/1 'DejaVu Sans Mono',monospace; letter-spacing:.16em; color:rgba(178,210,255,.46); }
+  #rec { top:26px; right:60px; font:500 13px/1 'DejaVu Sans Mono',monospace; letter-spacing:.16em; color:rgba(255,122,122,.72); }
+  #rec i { display:inline-block; width:8px; height:8px; border-radius:50%; background:#ff5a5a; margin-right:7px; }
+  #hud { left:60px; right:60px; bottom:26px; font:500 13px/1.5 'DejaVu Sans Mono',monospace; color:rgba(196,220,255,.58); letter-spacing:.05em; }
+  #hud .row { display:flex; justify-content:space-between; align-items:baseline; }
+  #hud .tc { font-size:15px; color:rgba(230,242,255,.92); letter-spacing:.08em; }
+  #bar { margin-top:9px; height:2px; width:100%; background:rgba(150,185,235,.15); overflow:hidden; }
+  #barfill { display:block; height:100%; width:0%; background:linear-gradient(90deg,#22d3ee,#a78bfa); }
+</style>
+<script type="importmap">
+  { "imports": { "three": "/vendor/three.module.js" } }
+</script>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="ov" id="flash"></div>
+<div class="ov brk" id="b1"></div><div class="ov brk" id="b2"></div>
+<div class="ov brk" id="b3"></div><div class="ov brk" id="b4"></div>
+<div class="ov" id="tag">code3d · v2 · scene-v2.html · window.seek(t)</div>
+<div class="ov" id="rec"><i></i>CAPTURING</div>
+<div class="ov" id="hud">
+  <div class="row">
+    <span class="tc" id="tc">t = 0.000 s</span>
+    <span id="fr">frame 000 / 360</span>
+    <span>1280×720 · 30 fps · HDR bloom · ACES · SwiftShader</span>
+  </div>
+  <div id="bar"><i id="barfill"></i></div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+
+/* ══ 契约：DURATION + async seek(t)。每个像素只是 t 的纯函数。 ══ */
+const W = 1280, H = 720, FPS = 30, DUR = 12.0;
+window.DURATION = DUR; window.FPS = FPS;
+
+const clamp = (x,a=0,b=1)=>Math.min(b,Math.max(a,x));
+const norm  = (t,a,b)=>clamp((t-a)/(b-a));
+const sstep = (a,b,t)=>{const x=norm(t,a,b);return x*x*(3-2*x);};
+const easeOut = x=>1-Math.pow(1-x,3);
+const easeOutBack = x=>{const c1=1.70158,c3=c1+1;return 1+c3*Math.pow(x-1,3)+c1*Math.pow(x-1,2);};
+function mulberry32(a){return function(){a|=0;a=(a+0x6D2B79F5)|0;let t=Math.imul(a^(a>>>15),1|a);t=(t+Math.imul(t^(t>>>7),61|t))^t;return((t^(t>>>14))>>>0)/4294967296;};}
+
+const C = { bg:0x04060c, cyan:'#22d3ee', violet:'#a78bfa', amber:'#fbbf24', text:'#eaf1ff' };
+
+/* ══ 运镜 ══ */
+const camPath = new THREE.CatmullRomCurve3([
+  new THREE.Vector3( 0.0, 1.00, 13.0),
+  new THREE.Vector3( 0.0, 1.15,  8.2),
+  new THREE.Vector3( 2.6, 1.50,  5.2),
+  new THREE.Vector3( 5.2, 2.20,  1.2),
+  new THREE.Vector3( 4.4, 3.40, -3.4),
+  new THREE.Vector3( 0.0, 6.20, -8.0),
+  new THREE.Vector3( 3.6, 3.20, -4.6),
+  new THREE.Vector3( 4.2, 1.70,  3.4),
+  new THREE.Vector3( 0.0, 1.50,  4.9),
+], false, 'catmullrom', 0.5);
+const lookPath = new THREE.CatmullRomCurve3([
+  new THREE.Vector3(0,1.20, 2.0), new THREE.Vector3(0,1.30, 0.0),
+  new THREE.Vector3(0,1.35, 0.0), new THREE.Vector3(0,1.40,-0.5),
+  new THREE.Vector3(0,1.30,-1.0), new THREE.Vector3(0,0.60, 0.0),
+  new THREE.Vector3(0,1.25,-0.2), new THREE.Vector3(0,1.42, 0.0),
+  new THREE.Vector3(0,1.45, 0.0),
+], false, 'catmullrom', 0.5);
+const UKEYS=[[0,0],[3,0.20],[6,0.50],[9,0.75],[12,1.0]];
+function uAt(t){for(let i=0;i<UKEYS.length-1;i++){const[a,ua]=UKEYS[i],[b,ub]=UKEYS[i+1];if(t<=b){const x=norm(t,a,b);return ua+(ub-ua)*(x*x*(3-2*x));}}return 1;}
+
+/* ══ 字卡（含 kicker + 划线动效） ══ */
+const CARDS = [
+  { t0:0.4,  t1:3.0,  kick:'01 · DETERMINISM',   title:'f(t)',               sub:'每一帧都是时间 t 的纯函数',       accent:C.cyan,   ox:-0.55, oy: 0.30, roll:-1 },
+  { t0:3.2,  t1:6.0,  kick:'02 · RENDERER',      title:'three.js + WebGL',   sub:'几何、材质、光照、镜头，全是代码', accent:C.violet, ox:-1.05, oy:-0.80, roll: 1 },
+  { t0:6.2,  t1:9.0,  kick:'03 · CAPTURE',       title:'360 frames @ 30fps', sub:'无头浏览器逐帧 seek(t) → 截图',   accent:C.amber,  ox: 1.05, oy:-0.70, roll:-1 },
+  { t0:9.2,  t1:12.0, kick:'04 · ASSEMBLE',      title:'ffmpeg → MP4',       sub:'帧序列 + 代码合成的音轨',          accent:'#8fe3ff', ox: 0.00, oy: 0.00, roll: 0 },
+];
+const CARD_Z=-5.4, CARD_W=4.05, CARD_H=CARD_W*(320/1024);
+
+function makeCardTexture(def){
+  const cw=1024, ch=320, pad=44;
+  const cv=document.createElement('canvas'); cv.width=cw; cv.height=ch;
+  const g=cv.getContext('2d');
+  g.clearRect(0,0,cw,ch);
+  g.beginPath(); g.roundRect(pad,pad,cw-pad*2,ch-pad*2,20);
+  g.fillStyle='rgba(5,9,20,0.68)'; g.fill();
+  g.lineWidth=2.5; g.strokeStyle=def.accent+'77'; g.stroke();
+  // 左侧强调条
+  g.beginPath(); g.roundRect(pad+26,pad+44,6,ch-pad*2-88,3);
+  g.fillStyle=def.accent; g.shadowColor=def.accent; g.shadowBlur=22; g.fill(); g.shadowBlur=0;
+  const tx=pad+60;
+  // kicker
+  g.font='500 25px "DejaVu Sans Mono", monospace';
+  g.letterSpacing='7px';
+  g.fillStyle=def.accent+'cc';
+  g.fillText(def.kick, tx, pad+78);
+  g.letterSpacing='0px';
+  // title
+  g.font='700 80px "Noto Sans CJK SC","DejaVu Sans",sans-serif';
+  g.textBaseline='alphabetic';
+  g.shadowColor=def.accent; g.shadowBlur=30; g.fillStyle=C.text; g.fillText(def.title,tx,pad+152);
+  g.shadowBlur=0; g.fillStyle=C.text; g.fillText(def.title,tx,pad+152);
+  const titleW=g.measureText(def.title).width;
+  // sub
+  g.font='400 36px "Noto Sans CJK SC","DejaVu Sans",sans-serif';
+  g.fillStyle='rgba(208,226,250,0.78)';
+  g.fillText(def.sub, tx, pad+222);
+  const t=new THREE.CanvasTexture(cv);
+  t.colorSpace=THREE.SRGBColorSpace; t.anisotropy=8;
+  return { tex:t, titleW, titleY:pad+170, tx };
+}
+
+/* ══ 环境贴图：软箱条 + 地平线辉光 → 让镀铬有"摄影棚"反射 ══ */
+function makeEnvTexture(){
+  const cv=document.createElement('canvas'); cv.width=1024; cv.height=512;
+  const g=cv.getContext('2d');
+  const grad=g.createLinearGradient(0,0,0,512);
+  grad.addColorStop(0.00,'#070b1c'); grad.addColorStop(0.40,'#161d40');
+  grad.addColorStop(0.50,'#39306b'); grad.addColorStop(0.55,'#0a0d1a');
+  grad.addColorStop(1.00,'#03050b');
+  g.fillStyle=grad; g.fillRect(0,0,1024,512);
+  const blob=(x,y,r,col)=>{const rg=g.createRadialGradient(x,y,0,x,y,r);rg.addColorStop(0,col);rg.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=rg;g.beginPath();g.arc(x,y,r,0,7);g.fill();};
+  blob(210,120,150,'rgba(120,220,255,0.85)');
+  blob(800,150,180,'rgba(186,140,255,0.75)');
+  blob(520,360,120,'rgba(255,190,110,0.35)');
+  // 软箱长条 → 金属上的长高光
+  const box=(x,y,w,h,col,blur)=>{g.save();g.shadowColor=col;g.shadowBlur=blur;g.fillStyle=col;g.fillRect(x,y,w,h);g.restore();};
+  box(120, 70, 210, 26, 'rgba(210,244,255,0.95)', 34);
+  box(640, 96, 260, 20, 'rgba(214,180,255,0.85)', 30);
+  box(380, 40,  90, 60, 'rgba(255,255,255,0.55)', 26);
+  box( 60,250, 150, 12, 'rgba(120,210,255,0.40)', 20);
+  box(820,270, 160, 12, 'rgba(200,150,255,0.35)', 20);
+  const t=new THREE.CanvasTexture(cv);
+  t.mapping=THREE.EquirectangularReflectionMapping; t.colorSpace=THREE.SRGBColorSpace;
+  return t;
+}
+function makeGlowTexture(inner,outer){
+  const cv=document.createElement('canvas'); cv.width=cv.height=256;
+  const g=cv.getContext('2d');
+  const rg=g.createRadialGradient(128,128,0,128,128,128);
+  rg.addColorStop(0,inner); rg.addColorStop(0.30,outer); rg.addColorStop(1,'rgba(0,0,0,0)');
+  g.fillStyle=rg; g.fillRect(0,0,256,256);
+  const t=new THREE.CanvasTexture(cv); t.colorSpace=THREE.SRGBColorSpace; return t;
+}
+function makeDotTexture(){
+  const cv=document.createElement('canvas'); cv.width=cv.height=64;
+  const g=cv.getContext('2d');
+  const rg=g.createRadialGradient(32,32,0,32,32,32);
+  rg.addColorStop(0,'rgba(255,255,255,1)'); rg.addColorStop(0.35,'rgba(190,230,255,0.55)'); rg.addColorStop(1,'rgba(0,0,0,0)');
+  g.fillStyle=rg; g.fillRect(0,0,64,64);
+  const t=new THREE.CanvasTexture(cv); t.colorSpace=THREE.SRGBColorSpace; return t;
+}
+
+/* ══ 后期链 uniforms / targets ══ */
+let renderer, scene, camera, knot, core, glow, glow2, grid, gridU, shards, dust, dustG, rings, pool;
+let rtScene, rtBright, rtBlurA, rtBlurB, postScene, postCam, quad, matBright, matBlur, matComp;
+let cards=[];
+const P={n:1100,pos:[],phase:[],speed:[],scale:[],dummy:new THREE.Object3D()};
+const MSAA = 4;
+
+function makeTargets(){
+  const opt={ type:THREE.HalfFloatType, samples:MSAA };
+  rtScene = new THREE.WebGLRenderTarget(W,H,opt);
+  rtBright= new THREE.WebGLRenderTarget(W>>1,H>>1,{ type:THREE.HalfFloatType });
+  rtBlurA = new THREE.WebGLRenderTarget(W>>2,H>>2,{ type:THREE.HalfFloatType });
+  rtBlurB = new THREE.WebGLRenderTarget(W>>2,H>>2,{ type:THREE.HalfFloatType });
+}
+
+const VERT = `varying vec2 vUv; void main(){ vUv=uv; gl_Position=vec4(position.xy,0.0,1.0); }`;
+
+function makePost(){
+  postScene=new THREE.Scene();
+  postCam=new THREE.OrthographicCamera(-1,1,1,-1,0,1);
+  quad=new THREE.Mesh(new THREE.PlaneGeometry(2,2), null);
+  quad.frustumCulled=false;
+  postScene.add(quad);
+
+  matBright=new THREE.ShaderMaterial({ depthTest:false, depthWrite:false, uniforms:{
+    tSrc:{value:null}, uThresh:{value:1.6}, uKnee:{value:0.5} },
+    vertexShader:VERT, fragmentShader:`
+      uniform sampler2D tSrc; uniform float uThresh,uKnee; varying vec2 vUv;
+      void main(){
+        vec3 c=texture2D(tSrc,vUv).rgb;
+        float l=dot(c,vec3(0.2126,0.7152,0.0722));
+        float s=clamp((l-uThresh)/max(uKnee,1e-4),0.0,1.0);
+        gl_FragColor=vec4(c*s*s,1.0);
+      }`});
+
+  matBlur=new THREE.ShaderMaterial({ depthTest:false, depthWrite:false, uniforms:{
+    tSrc:{value:null}, uDir:{value:new THREE.Vector2()} },
+    vertexShader:VERT, fragmentShader:`
+      uniform sampler2D tSrc; uniform vec2 uDir; varying vec2 vUv;
+      void main(){
+        vec3 s=texture2D(tSrc,vUv).rgb*0.227027;
+        s+=texture2D(tSrc,vUv+uDir*1.3846).rgb*0.3162162;
+        s+=texture2D(tSrc,vUv-uDir*1.3846).rgb*0.3162162;
+        s+=texture2D(tSrc,vUv+uDir*3.2308).rgb*0.0702702;
+        s+=texture2D(tSrc,vUv-uDir*3.2308).rgb*0.0702702;
+        gl_FragColor=vec4(s,1.0);
+      }`});
+
+  matComp=new THREE.ShaderMaterial({ depthTest:false, depthWrite:false, uniforms:{
+    tScene:{value:null}, tBloom:{value:null},
+    uBloom:{value:0.12}, uExposure:{value:1.06}, uCA:{value:0.0020},
+    uGrain:{value:0.035}, uFrame:{value:0}, uVig:{value:0.55} },
+    vertexShader:VERT, fragmentShader:`
+      uniform sampler2D tScene,tBloom;
+      uniform float uBloom,uExposure,uCA,uGrain,uFrame,uVig;
+      varying vec2 vUv;
+      vec3 aces(vec3 x){ return clamp((x*(2.51*x+0.03))/(x*(2.43*x+0.59)+0.14),0.0,1.0); }
+      float hash(vec2 p){ p=fract(p*vec2(123.34,456.21)); p+=dot(p,p+45.32); return fract(p.x*p.y); }
+      vec3 lin2srgb(vec3 c){ return mix(c*12.92, 1.055*pow(max(c,vec3(0.0)),vec3(1.0/2.4))-0.055, step(vec3(0.0031308),c)); }
+      void main(){
+        vec2 uv=vUv;
+        vec2 d=uv-0.5; float r2=dot(d,d);
+        vec2 off=d*r2*uCA*3.0;                       // 径向色差
+        vec3 base;
+        base.r=texture2D(tScene,uv+off).r;
+        base.g=texture2D(tScene,uv).g;
+        base.b=texture2D(tScene,uv-off).b;
+        vec3 bloom=texture2D(tBloom,uv).rgb;
+        vec3 col=base+bloom*uBloom;
+        col*=uExposure;
+        col=aces(col);
+        // 分离色调：阴影偏青、高光偏暖 + 轻 S 曲线
+        float l=dot(col,vec3(0.2126,0.7152,0.0722));
+        col=mix(col, col*vec3(0.88,0.96,1.10), (1.0-l)*0.16);
+        col=mix(col, col*vec3(1.05,1.00,0.94), l*0.20);
+        col=clamp((col-0.5)*1.055+0.5, 0.0, 1.0);
+        // 暗角
+        float vig=1.0-smoothstep(0.34,0.92,length(d*vec2(1.06,0.94))*1.35)*uVig;
+        col*=vig;
+        col=lin2srgb(col);
+        // 胶片颗粒：按帧播种，阴影更多
+        float g=hash(gl_FragCoord.xy+vec2(uFrame*137.0,uFrame*71.0))-0.5;
+        col+=g*uGrain*(1.0-l*0.65);
+        gl_FragColor=vec4(col,1.0);
+      }`});
+}
+function blit(mat,target){ quad.material=mat; renderer.setRenderTarget(target); renderer.render(postScene,postCam); }
+
+/* ══ init ══ */
+function init(){
+  renderer=new THREE.WebGLRenderer({ canvas:document.getElementById('c'), antialias:false, alpha:false, preserveDrawingBuffer:true });
+  renderer.setPixelRatio(1);
+  renderer.setSize(W,H,false);
+  renderer.toneMapping=THREE.NoToneMapping;        // 线性 HDR 进 RT，ACES 在后期做
+  renderer.outputColorSpace=THREE.SRGBColorSpace;
+
+  makeTargets(); makePost();
+
+  scene=new THREE.Scene();
+  scene.background=new THREE.Color(C.bg);
+  scene.fog=new THREE.FogExp2(C.bg,0.020);
+  camera=new THREE.PerspectiveCamera(42,W/H,0.1,220);
+
+  const pmrem=new THREE.PMREMGenerator(renderer);
+  pmrem.compileEquirectangularShader();
+  scene.environment=pmrem.fromEquirectangular(makeEnvTexture()).texture;
+
+  scene.add(new THREE.HemisphereLight(0x93baff,0x0a0d18,0.62));
+  const key=new THREE.PointLight(0x8ce8ff,58,42,2); key.position.set(-5.5,5.2,4.5); scene.add(key);
+  const rim=new THREE.PointLight(0xb98cff,52,42,2); rim.position.set( 6.0,3.2,-4.0); scene.add(rim);
+  const fil=new THREE.PointLight(0xffc46b,15,30,2); fil.position.set( 0.0,-1.6,5.0); scene.add(fil);
+
+  knot=new THREE.Mesh(new THREE.TorusKnotGeometry(1.15,0.335,220,34),
+    new THREE.MeshPhysicalMaterial({ color:0xbcd2ee, metalness:1.0, roughness:0.20,
+      clearcoat:1.0, clearcoatRoughness:0.08, envMapIntensity:2.2 }));
+  knot.position.set(0,1.35,0); scene.add(knot);
+
+  core=new THREE.Mesh(new THREE.IcosahedronGeometry(0.22,2), new THREE.MeshBasicMaterial({color:0x2fd0ee}));
+  core.position.copy(knot.position); scene.add(core);
+
+  glow=new THREE.Sprite(new THREE.SpriteMaterial({ map:makeGlowTexture('rgba(150,235,255,0.85)','rgba(70,150,255,0.30)'),
+    blending:THREE.AdditiveBlending, transparent:true, depthWrite:false, opacity:0 }));
+  glow.position.copy(knot.position); glow.scale.setScalar(9); scene.add(glow);
+  glow2=new THREE.Sprite(new THREE.SpriteMaterial({ map:makeGlowTexture('rgba(200,160,255,0.55)','rgba(120,80,220,0.18)'),
+    blending:THREE.AdditiveBlending, transparent:true, depthWrite:false, opacity:0 }));
+  glow2.position.copy(knot.position); glow2.scale.setScalar(17); scene.add(glow2);
+
+  // 地面光池（接触感）
+  pool=new THREE.Mesh(new THREE.PlaneGeometry(8,8),
+    new THREE.MeshBasicMaterial({ map:makeGlowTexture('rgba(90,200,255,0.55)','rgba(40,110,220,0.20)'),
+      blending:THREE.AdditiveBlending, transparent:true, depthWrite:false, opacity:0 }));
+  pool.rotation.x=-Math.PI/2; pool.position.y=0.03; scene.add(pool);
+
+  gridU={ uTime:{value:0}, uReveal:{value:0}, uOpacity:{value:1},
+          uColorA:{value:new THREE.Color(0x1d4f6b)}, uColorB:{value:new THREE.Color(0x22d3ee)} };
+  grid=new THREE.Mesh(new THREE.PlaneGeometry(160,160,1,1), new THREE.ShaderMaterial({
+    uniforms:gridU, transparent:true, depthWrite:false, side:THREE.DoubleSide,
+    vertexShader:`varying vec3 vW; void main(){ vec4 wp=modelMatrix*vec4(position,1.0); vW=wp.xyz; gl_Position=projectionMatrix*viewMatrix*wp; }`,
+    fragmentShader:`
+      uniform float uTime,uReveal,uOpacity; uniform vec3 uColorA,uColorB; varying vec3 vW;
+      void main(){
+        vec2 p=vW.xz; float d=length(p);
+        float lw=0.017+d*0.0038;
+        vec2 g1=abs(fract(p)-0.5); float line1=1.0-smoothstep(0.0,lw,min(g1.x,g1.y));
+        vec2 g5=abs(fract(p/5.0)-0.5)*5.0; float line5=1.0-smoothstep(0.0,lw*1.7,min(g5.x,g5.y));
+        float reveal=1.0-smoothstep(uReveal*27.0-7.0,uReveal*27.0,d);
+        float ring=exp(-pow((d-uTime*7.5)/1.15,2.0))*0.6;
+        float fade=exp(-d*0.070);
+        vec3 col=mix(uColorA,uColorB,clamp(line5+ring,0.0,1.0));
+        float a=(line1*0.42+line5*0.60+ring)*reveal*fade*uOpacity;
+        if(a<0.002) discard;
+        gl_FragColor=vec4(col*(0.95+ring*1.2),a);
+      }` }));
+  grid.rotation.x=-Math.PI/2; scene.add(grid);
+
+  // 实例化碎片
+  const rand=mulberry32(20260922);
+  shards=new THREE.InstancedMesh(new THREE.OctahedronGeometry(0.052,0),
+    new THREE.MeshStandardMaterial({ color:0x9dc0ff, metalness:0.92, roughness:0.30,
+      emissive:0x1b3f74, emissiveIntensity:0.7, envMapIntensity:1.2, transparent:true, opacity:1 }), P.n);
+  shards.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  for(let i=0;i<P.n;i++){
+    const r=2.3+9.5*Math.pow(rand(),0.62), th=r*0.52+rand()*1.1;
+    P.pos.push(new THREE.Vector3(Math.cos(th)*r, 0.35+(rand()-0.5)*(0.5+2.0*Math.exp(-r/5))+rand()*0.9, Math.sin(th)*r));
+    P.phase.push(rand()*Math.PI*2); P.speed.push(0.35+rand()*1.05); P.scale.push(0.40+rand()*1.00);
+  }
+  scene.add(shards);
+
+  // 加性尘埃点
+  dustG=new THREE.Group();
+  const dn=700, dpos=new Float32Array(dn*3);
+  for(let i=0;i<dn;i++){
+    const r=3+15*Math.pow(rand(),0.7), th=rand()*Math.PI*2;
+    dpos[i*3]=Math.cos(th)*r; dpos[i*3+1]=0.2+rand()*6.0; dpos[i*3+2]=Math.sin(th)*r;
+  }
+  const dgeo=new THREE.BufferGeometry();
+  dgeo.setAttribute('position', new THREE.BufferAttribute(dpos,3));
+  dust=new THREE.Points(dgeo, new THREE.PointsMaterial({ map:makeDotTexture(), size:0.06,
+    sizeAttenuation:true, transparent:true, depthWrite:false, blending:THREE.AdditiveBlending,
+    color:0xa8dcff, opacity:0.45 }));
+  dustG.add(dust); scene.add(dustG);
+
+  // 轨道环
+  rings=new THREE.Group();
+  const mkRing=(rad,tube,mat,rx,rz)=>{ const m=new THREE.Mesh(new THREE.TorusGeometry(rad,tube,8,180),mat);
+    m.rotation.set(rx,0,rz); rings.add(m); return m; };
+  mkRing(2.30,0.014, new THREE.MeshStandardMaterial({color:0xcfe2ff,metalness:1,roughness:0.22,envMapIntensity:1.6}), Math.PI/2*0.92, 0.20);
+  mkRing(2.85,0.010, new THREE.MeshBasicMaterial({color:0x35d6f0,transparent:true,opacity:0.28,blending:THREE.AdditiveBlending,depthWrite:false}), Math.PI/2*0.72, -0.55);
+  mkRing(3.45,0.008, new THREE.MeshStandardMaterial({color:0xb9a0ff,metalness:1,roughness:0.3,envMapIntensity:1.4}), Math.PI/2*1.12, 0.85);
+  rings.position.copy(knot.position);
+  scene.add(rings);
+
+  for(const def of CARDS){
+    const { tex, titleW, titleY, tx } = makeCardTexture(def);
+    const m=new THREE.Mesh(new THREE.PlaneGeometry(CARD_W,CARD_H),
+      new THREE.MeshBasicMaterial({ map:tex, transparent:true, depthWrite:false, depthTest:false, opacity:0, toneMapped:false }));
+    m.renderOrder=10; m.visible=false;
+    // 划线（从左往右画）
+    const uw=CARD_W*titleW/1024;
+    const ugeo=new THREE.PlaneGeometry(uw,0.016); ugeo.translate(uw/2,0,0);
+    const ul=new THREE.Mesh(ugeo, new THREE.MeshBasicMaterial({ color:new THREE.Color(def.accent),
+      transparent:true, opacity:0, depthWrite:false, depthTest:false, toneMapped:false }));
+    ul.position.set(((tx)/1024-0.5)*CARD_W, (0.5-titleY/320)*CARD_H, 0.002);
+    ul.renderOrder=11; ul.scale.x=0.0001;
+    m.add(ul);
+    scene.add(m);
+    cards.push({ mesh:m, ul, def });
+  }
+}
+
+/* ══ renderAt(t) ══ */
+const _cp=new THREE.Vector3(), _lk=new THREE.Vector3();
+const _f=new THREE.Vector3(), _r=new THREE.Vector3(), _u=new THREE.Vector3();
+const _q=new THREE.Quaternion(), _Z=new THREE.Vector3(0,0,1);
+const UP=new THREE.Vector3(0,1,0);
+
+function renderAt(t){
+  t=clamp(t,0,DUR);
+  const u=uAt(t);
+  camPath.getPointAt(clamp(u,0,1),_cp);
+  lookPath.getPointAt(clamp(u,0,1),_lk);
+  _cp.x+=Math.sin(t*1.31)*0.017+Math.sin(t*0.47)*0.011;
+  _cp.y+=Math.sin(t*1.73+1.1)*0.014+Math.sin(t*0.61)*0.009;
+  camera.position.copy(_cp);
+  camera.lookAt(_lk);
+  camera.rotateZ(0.05*Math.sin(t*0.5+0.7));          // 轻微 roll，含在 billboard 基准里
+  const dive=sstep(9.0,11.4,t);
+  camera.fov=42-dive*5.0+sstep(5.6,8.4,t)*7.0;
+  camera.updateProjectionMatrix();
+  camera.updateMatrixWorld();
+  _f.setFromMatrixColumn(camera.matrixWorld,2).multiplyScalar(-1);
+  _r.setFromMatrixColumn(camera.matrixWorld,0);
+  _u.setFromMatrixColumn(camera.matrixWorld,1);
+
+  const appear=easeOut(sstep(1.5,3.4,t));
+  knot.scale.setScalar(0.001+appear);
+  knot.rotation.set(t*0.34,t*0.52,t*0.19);
+  knot.position.y=1.35+Math.sin(t*0.9)*0.075;
+  core.position.copy(knot.position);
+  core.scale.setScalar(0.001+appear*(1+Math.sin(t*2.4)*0.055));
+  core.rotation.set(-t*0.6,t*0.8,0);
+  const glowUp=sstep(9.4,11.0,t);
+  glow.position.copy(knot.position);
+  glow.material.opacity=appear*(0.16+Math.sin(t*2.4)*0.03+glowUp*0.35);
+  glow.scale.setScalar(7+glowUp*4);
+  glow2.position.copy(knot.position);
+  glow2.material.opacity=appear*(0.09+glowUp*0.25);
+  glow2.scale.setScalar(13+glowUp*6);
+
+  rings.position.copy(knot.position);
+  rings.rotation.y=t*0.22;
+  rings.children[0].rotation.z=0.20+t*0.10;
+  rings.children[2].rotation.z=0.85-t*0.07;
+  rings.scale.setScalar(0.001+appear);
+  rings.children.forEach(c=>{ if(c.material.transparent) c.material.opacity=0.28*appear*(1-sstep(9.8,11.8,t)*0.6); });
+
+  pool.position.x=knot.position.x; pool.position.z=knot.position.z;
+  pool.material.opacity=appear*0.40*(1-sstep(9.7,11.6,t)*0.7);
+
+  gridU.uTime.value=t;
+  gridU.uReveal.value=easeOut(norm(t,0.02,2.4));
+  gridU.uOpacity.value=1.0-sstep(9.7,11.6,t)*0.82;
+
+  const pAppear=sstep(2.2,5.0,t);
+  const envFade=1.0-sstep(9.8,11.8,t)*0.72;
+  shards.material.opacity=pAppear*envFade;
+  dust.material.opacity=0.45*pAppear*envFade;
+  dustG.rotation.y=t*0.05;
+  const gRot=t*0.115, cg=Math.cos(gRot), sg=Math.sin(gRot);
+  for(let i=0;i<P.n;i++){
+    const p=P.pos[i];
+    const x=p.x*cg-p.z*sg, z=p.x*sg+p.z*cg;
+    const bob=Math.sin(t*P.speed[i]+P.phase[i]);
+    P.dummy.position.set(x,p.y+bob*0.22,z);
+    P.dummy.scale.setScalar(P.scale[i]*(0.72+0.28*(0.5+0.5*bob))*(0.25+0.75*pAppear));
+    P.dummy.rotation.set(t*P.speed[i]*0.6+P.phase[i], t*P.speed[i]*0.4, P.phase[i]);
+    P.dummy.updateMatrix();
+    shards.setMatrixAt(i,P.dummy.matrix);
+  }
+  shards.instanceMatrix.needsUpdate=true;
+
+  for(const { mesh, ul, def } of cards){
+    const on=t>=def.t0-0.02 && t<=def.t1+0.02;
+    mesh.visible=on; ul.visible=on;
+    if(!on){ mesh.material.opacity=0; ul.material.opacity=0; continue; }
+    const inA=sstep(def.t0,def.t0+0.30,t);
+    const outA=1-sstep(def.t1-0.28,def.t1,t);
+    mesh.material.opacity=inA*outA;
+    const sp=easeOutBack(inA);
+    const dz=CARD_Z-(1-sp)*6.5;
+    const dx=def.ox+(1-sp)*(def.ox>=0?1.1:-1.1);
+    const dy=def.oy+(1-easeOut(inA))*0.30;
+    mesh.position.copy(camera.position).addScaledVector(_f,-dz).addScaledVector(_r,dx).addScaledVector(_u,dy);
+    mesh.quaternion.copy(camera.quaternion);
+    _q.setFromAxisAngle(_Z,(1-sp)*0.10*(def.roll||0));
+    mesh.quaternion.multiply(_q);
+    mesh.scale.setScalar(0.90+0.10*sp);
+    ul.scale.x=Math.max(0.0001, sstep(def.t0+0.10, def.t0+0.55, t));
+    ul.material.opacity=inA*outA*0.95;
+  }
+
+  const beat=t%0.5;
+  const flash=0.050*Math.exp(-beat/0.045)*sstep(0.35,1.0,t)
+            + 0.080*Math.exp(-(t-9.0)*(t-9.0)/0.0035)*(t>8.9?1:0);
+  document.getElementById('flash').style.opacity=flash.toFixed(4);
+  document.getElementById('tc').textContent='t = '+t.toFixed(3)+' s';
+  document.getElementById('fr').textContent='frame '+String(Math.round(t*FPS)).padStart(3,'0')+' / '+Math.round(DUR*FPS);
+  document.getElementById('barfill').style.width=(t/DUR*100).toFixed(3)+'%';
+  document.getElementById('rec').style.opacity=(0.45+0.55*(0.5+0.5*Math.sin(t*Math.PI*2))).toFixed(3);
+
+  /* ── 后期链 ── */
+  matComp.uniforms.uFrame.value=Math.round(t*FPS);
+  renderer.setRenderTarget(rtScene);
+  renderer.render(scene,camera);
+  matBright.uniforms.tSrc.value=rtScene.texture;
+  blit(matBright, rtBright);
+  const tx=1/(W>>2), ty=1/(H>>2);
+  matBlur.uniforms.tSrc.value=rtBright.texture; matBlur.uniforms.uDir.value.set(tx,0); blit(matBlur,rtBlurA);
+  matBlur.uniforms.tSrc.value=rtBlurA.texture;  matBlur.uniforms.uDir.value.set(0,ty); blit(matBlur,rtBlurB);
+  matBlur.uniforms.tSrc.value=rtBlurB.texture;  matBlur.uniforms.uDir.value.set(tx*1.8,0); blit(matBlur,rtBlurA);
+  matBlur.uniforms.tSrc.value=rtBlurA.texture;  matBlur.uniforms.uDir.value.set(0,ty*1.8); blit(matBlur,rtBlurB);
+  matComp.uniforms.tScene.value=rtScene.texture;
+  matComp.uniforms.tBloom.value=rtBlurB.texture;
+  blit(matComp, null);
+}
+
+let readyP=null;
+window.ready=()=>(readyP??=(async()=>{ await document.fonts.ready;
+  await document.fonts.load('700 80px "Noto Sans CJK SC"');
+  await document.fonts.load('400 36px "Noto Sans CJK SC"');
+  await document.fonts.load('500 25px "DejaVu Sans Mono"');
+  init(); renderAt(0); return true; })());
+window.seek=async t=>{ await window.ready(); renderAt(t); };
+window.__contract={ DURATION:DUR, FPS:FPS, W:W, H:H, cards:CARDS.length, msaa:MSAA };
+</script>
+</body>
+</html>
