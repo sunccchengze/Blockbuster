@@ -4,7 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server.js",
+    "render": "node scripts/render_all.js",
+    "audio": "node src/audio/compose_v3.js",
+    "test": "node -e 'require(\"./src/core/audio/qc\").evaluateAudioQuality(\"./video/code3d-v3-score.wav\")'"
   },
   "repository": {
     "type": "git",
@@ -23,6 +26,8 @@
     "@ffprobe-installer/ffprobe": "^2.1.2",
     "@ffprobe-installer/linux-x64": "^5.2.0",
     "@napi-rs/canvas": "^1.0.9",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
     "three": "^0.186.1"
   }
 }

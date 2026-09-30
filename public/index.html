@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blockbuster Studio // 全领域代码视频渲染工作台</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="dark-theme">
+  <!-- 顶部全球导航栏 -->
+  <header class="app-header">
+    <div class="header-left">
+      <div class="logo-group">
+        <span class="logo-badge">PRO</span>
+        <h1 class="logo-title">BLOCKBUSTER <span>STUDIO</span></h1>
+      </div>
+      <span class="tagline">All-Domain Code2Video Engine & Director Protocol</span>
+    </div>
+
+    <div class="header-center">
+      <div class="status-indicator">
+        <span class="dot-online"></span>
+        <span class="status-text">Pipeline Ready · Zero-Disk IPC Pipe</span>
+      </div>
+      <div class="git-pill">
+        <span class="icon-git"></span>
+        <span id="git-branch">arena/01a0f07e-blockbuster</span>
+        <span id="git-commit" class="commit-hash">c37d85e</span>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <button id="btn-recompose-audio" class="btn btn-secondary">
+        <span class="btn-icon">🎵</span> 重算物理配乐
+      </button>
+      <button id="btn-run-render" class="btn btn-primary">
+        <span class="btn-icon">▶</span> 全量渲染流水线
+      </button>
+      <a href="https://github.com/sunccchengze/Blockbuster" target="_blank" class="btn btn-ghost" title="GitHub 源码">
+        GitHub
+      </a>
+    </div>
+  </header>
+
+  <!-- 工作区主体 -->
+  <main class="studio-workspace">
+    <!-- 左侧：导演控制与领域配置 -->
+    <aside class="panel panel-left">
+      <div class="panel-section">
+        <h2 class="section-title">全领域引擎矩阵 (Domain Matrix)</h2>
+        <div class="domain-selector">
+          <button class="domain-card active" data-domain="D">
+            <span class="domain-badge">Domain D</span>
+            <div class="domain-name">艺术风格化 (Artistic Ink-Wash)</div>
+            <div class="domain-desc">水墨宣纸 · 180° 快门积分 · 物理建模古琴配乐</div>
+          </button>
+          <button class="domain-card" data-domain="B">
+            <span class="domain-badge">Domain B</span>
+            <div class="domain-name">电影三维视效 (Cinematic 3D)</div>
+            <div class="domain-desc">Three.js PBR · 双动态光源 · 后处理 Bloom 辉光</div>
+          </button>
+          <button class="domain-card" data-domain="A">
+            <span class="domain-badge">Domain A</span>
+            <div class="domain-name">商业科技排版 (Tech Launch)</div>
+            <div class="domain-desc">瑞士排版网格 · 物理阻尼弹簧 · 零闪烁字型内联</div>
+          </button>
+          <button class="domain-card" data-domain="C">
+            <span class="domain-badge">Domain C</span>
+            <div class="domain-name">科学数据可视 (Data & Math)</div>
+            <div class="domain-desc">参数化函数图表 · 连续拓扑变形 · 毫秒脉冲晶体音</div>
+          </button>
+          <button class="domain-card" data-domain="E">
+            <span class="domain-badge">Domain E</span>
+            <div class="domain-name">音乐节拍叙事 (Music MV)</div>
+            <div class="domain-desc">多轨时序清单 · 毫秒级重音强切 · 情绪张力升降</div>
+          </button>
+        </div>
+      </div>
+
+      <div class="panel-section">
+        <h2 class="section-title">输出规格参数 (Export Specs)</h2>
+        <div class="specs-grid">
+          <div class="spec-item">
+            <label>分辨率</label>
+            <span class="spec-value">1280×720 (16:9)</span>
+          </div>
+          <div class="spec-item">
+            <label>基准帧率</label>
+            <span class="spec-value">24.00 fps</span>
+          </div>
+          <div class="spec-item">
+            <label>快门角度</label>
+            <span class="spec-value">180° (1/48s 积分)</span>
+          </div>
+          <div class="spec-item">
+            <label>快门子采样</label>
+            <span class="spec-value">4x Gaussian Kernel</span>
+          </div>
+          <div class="spec-item">
+            <label>视频编码</label>
+            <span class="spec-value">H.264 / CRF 18</span>
+          </div>
+          <div class="spec-item">
+            <label>音频编码</label>
+            <span class="spec-value">AAC 256k / 48kHz</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-section log-section">
+        <div class="section-header">
+          <h2 class="section-title">实时执行日志 (Live Stream Logs)</h2>
+          <button id="btn-clear-logs" class="btn-text">清空</button>
+        </div>
+        <div id="terminal-logs" class="terminal-box">
+          <div class="log-line">[System] Blockbuster Studio 客户端已就绪</div>
+          <div class="log-line">[Engine] 挂载 Skia C++ 渲染内存管线与 FFmpeg 标准输入推流</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- 中间：影院视口与时间轴 -->
+    <section class="panel panel-center">
+      <!-- 模式与版本切换 Tab -->
+      <div class="viewport-tabs">
+        <button class="tab-btn active" data-video="/video/code3d-v3.mp4" data-type="video" data-title="V3「墨」旗舰成片 (10.00s 180°快门+物理配乐)">
+          🎬 V3「墨」旗舰成片 (当前版)
+        </button>
+        <button class="tab-btn" data-video="/video/code3d-v2.mp4" data-type="video" data-title="V2 质感进阶版 (10.00s 金属PBR+Bloom)">
+          ✨ V2 金属PBR版
+        </button>
+        <button class="tab-btn" data-video="/video/code3d-v1.mp4" data-type="video" data-title="V1 路线验证版 (12.00s 3D线框纯函数)">
+          📐 V1 路线验证版
+        </button>
+        <button class="tab-btn" data-type="interactive" data-title="交互式纯函数实时画布求值模式">
+          ⚡ 交互纯函数模拟器
+        </button>
+      </div>
+
+      <!-- 视口展示区 -->
+      <div class="cinema-viewport">
+        <!-- 视频播放器模式 -->
+        <div id="video-container" class="viewport-canvas-container">
+          <video id="main-video" src="/video/code3d-v3.mp4" playsinline preload="auto"></video>
+          <div class="viewport-overlay">
+            <span id="viewport-badge" class="viewport-badge">V3「墨」旗舰成片 · 24fps 180°快门</span>
+            <span id="timecode-display" class="timecode-display">00:00:00.000 / 00:00:10.000</span>
+          </div>
+        </div>
+
+        <!-- 交互 Canvas 模式 -->
+        <div id="canvas-container" class="viewport-canvas-container hidden">
+          <canvas id="interactive-canvas" width="1280" height="720"></canvas>
+          <div class="viewport-overlay">
+            <span class="viewport-badge interactive">LIVE SEEK(T) EVALUATION (纯函数直接渲染)</span>
+            <span id="canvas-timecode" class="timecode-display">T = 0.000s (Frame 0/240)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 播控操作栏 -->
+      <div class="transport-controls">
+        <div class="transport-left">
+          <button id="btn-step-back" class="btn-ctrl" title="后退 1 帧">⏮ -1 帧</button>
+          <button id="btn-play-pause" class="btn-ctrl btn-play" title="播放/暂停">▶ 播放</button>
+          <button id="btn-step-forward" class="btn-ctrl" title="前进 1 帧">+1 帧 ⏭</button>
+          <button id="btn-loop" class="btn-ctrl active" title="单片循环">🔁 循环</button>
+        </div>
+
+        <div class="transport-center">
+          <input type="range" id="seek-slider" min="0" max="10" step="0.041666" value="0" class="seek-slider">
+        </div>
+
+        <div class="transport-right">
+          <select id="playback-speed" class="select-dropdown">
+            <option value="0.25">0.25x (慢放)</option>
+            <option value="0.5">0.5x</option>
+            <option value="1.0" selected>1.0x (原速)</option>
+            <option value="1.5">1.5x</option>
+          </select>
+          <span id="frame-counter" class="frame-counter">FRAME 000 / 240</span>
+        </div>
+      </div>
+
+      <!-- 9 个叙事 Beat 可视化时间轴 -->
+      <div class="timeline-beats-container">
+        <div class="timeline-header">
+          <span class="timeline-title">视听统一分镜时间轴 (The 9 Narrative Beats)</span>
+          <span class="timeline-hint">点击任意 Beat 即可瞬间精确寻道到对应重音关键帧</span>
+        </div>
+        <div id="beats-track" class="beats-track">
+          <!-- 动态渲染 9 个叙事 Beat 块 -->
+        </div>
+      </div>
+    </section>
+
+    <!-- 右侧：客观门禁、印相质检单与资产管理 -->
+    <aside class="panel panel-right">
+      <!-- 6 项客观音频门禁卡片 -->
+      <div class="panel-section">
+        <div class="section-header">
+          <h2 class="section-title">6 项客观音频门禁 (Audio QC Gates)</h2>
+          <span class="badge-all-pass">ALL PASS (100%)</span>
+        </div>
+        <div class="gates-list">
+          <div class="gate-card pass">
+            <div class="gate-header">
+              <span class="gate-name">Gate 1: 积分响度 (Integrated LUFS)</span>
+              <span class="gate-tag">PASS</span>
+            </div>
+            <div class="gate-metrics">
+              <span class="val">-13.89 LUFS</span>
+              <span class="target">指标: -14.0 ± 1.0 LUFS</span>
+            </div>
+          </div>
+
+          <div class="gate-card pass">
+            <div class="gate-header">
+              <span class="gate-name">Gate 2: 真实峰值 (True Peak)</span>
+              <span class="gate-tag">PASS</span>
+            </div>
+            <div class="gate-metrics">
+              <span class="val">-1.20 dBTP</span>
+              <span class="target">指标: ≤ -1.0 dBTP</span>
+            </div>
+          </div>
+
+          <div class="gate-card pass">
+            <div class="gate-header">
+              <span class="gate-name">Gate 3: 动态范围 (Loudness Range)</span>
+              <span class="gate-tag">PASS</span>
+            </div>
+            <div class="gate-metrics">
+              <span class="val">9.73 LU</span>
+              <span class="target">指标: 4.0 ~ 18.0 LU</span>
+            </div>
+          </div>
+
+          <div class="gate-card pass">
+            <div class="gate-header">
+              <span class="gate-name">Gate 4: 直流与抗削波 (DC Offset)</span>
+              <span class="gate-tag">PASS</span>
+            </div>
+            <div class="gate-metrics">
+              <span class="val">-86.09 dBFS</span>
+              <span class="target">指标: < -60 dBFS</span>
+            </div>
+          </div>
+
+          <div class="gate-card pass">
+            <div class="gate-header">
+              <span class="gate-name">Gate 5: 频谱平衡与次低频纯净</span>
+              <span class="gate-tag">PASS</span>
+            </div>
+            <div class="gate-metrics">
+              <span class="val">自然物理弦衰减</span>
+              <span class="target">指标: 无超频啸叫</span>
+            </div>
+          </div>
+
+          <div class="gate-card pass">
+            <div class="gate-header">
+              <span class="gate-name">Gate 6: 叙事重音同步容差</span>
+              <span class="gate-tag">PASS</span>
+            </div>
+            <div class="gate-metrics">
+              <span class="val">12.5 ms</span>
+              <span class="target">指标: ≤ ±41.6 ms (±1帧)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 视觉接触质检单与声学频谱瀑布图审查 -->
+      <div class="panel-section">
+        <h2 class="section-title">编码后质检制品 (QC Artifacts)</h2>
+        <div class="qc-media-cards">
+          <div class="qc-card" id="card-contact-sheet">
+            <div class="qc-card-header">
+              <span>🎞 9 叙事 Beat 九宫格印相单</span>
+              <span class="zoom-hint">点击放大</span>
+            </div>
+            <div class="qc-img-thumb">
+              <img src="/video/contact-sheet-v3.png" alt="Contact Sheet">
+            </div>
+          </div>
+
+          <div class="qc-card" id="card-spectrogram">
+            <div class="qc-card-header">
+              <span>🔊 声学频谱瀑布图 (Spectrogram)</span>
+              <span class="zoom-hint">点击放大</span>
+            </div>
+            <div class="qc-img-thumb">
+              <img src="/video/score-spectrogram.png" alt="Spectrogram">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 交付产物管理与下载 -->
+      <div class="panel-section">
+        <h2 class="section-title">产物资产清单 (Deliverables)</h2>
+        <div id="artifacts-list" class="artifacts-list">
+          <!-- 动态拉取 /api/artifacts -->
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- 全屏图片查看模态框 -->
+  <div id="image-modal" class="modal hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modal-title">质检图像核验</h3>
+        <button id="modal-close" class="btn-close">×</button>
+      </div>
+      <div class="modal-body">
+        <img id="modal-img" src="" alt="Preview">
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

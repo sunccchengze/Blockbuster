@@ -51,12 +51,13 @@
 
 ---
 
-## 4. 七阶段导演协议 (The 7-Stage Director Protocol)
+## 5. Web UI 与生产交互层 (Studio Web Interface)
 
-1. **Phase 1: 需求意图与领域澄清 (Clarification)**：自动识别领域（Tech / 3D / Science / Artistic / MV），问清情绪色调、节奏与交付规格。
-2. **Phase 2: 视听统一步骤分镜 (BeatSheet Manifest)**：定义带有时间戳、视觉描述、运镜曲线与音频事件的共享清单。
-3. **Phase 3: 确定性场景纯函数实现 (Deterministic Implementation)**：编写 `seek(t)`，实现图层、着色器与动力学。
-4. **Phase 4: 180° 自适应快门时间积分 (Motion Blur Accumulator)**：以 $\tau = \frac{1}{2 \times \text{fps}}$ 进行子帧加权混合。
-5. **Phase 5: 物理建模配乐与音效合成 (Procedural Sound Design)**：离散数学直接生成 24-bit/48kHz WAV 并通过母带压限。
-6. **Phase 6: 流式推流与实时编码 (Stream Encoding Pipeline)**：内存 Pipe 零中间文件直接压缩生成 MP4。
-7. **Phase 7: 双模客观自动化质检 (Dual-Modal QC Gates)**：从编码后的 MP4 抽帧生成 Contact Sheet，并进行 6 项音频门禁检测。
+- **启动命令**：`npm start` (服务绑定 `0.0.0.0:3000`)
+- **功能特性**：
+  - 影院级视口回放（支持 V3/V2/V1 版本切换、逐帧步进、循环、倍速）；
+  - 9 叙事 Beat 可视化分镜时间轴，支持点击瞬间精确跳跃定位；
+  - 纯函数实时 Canvas 渲染模拟器；
+  - 6 项客观音频门禁雷达与声学校验卡片；
+  - 编码后真实 MP4 抽帧印相单与声学频谱瀑布图大图缩放审查；
+  - 一键触发全量渲染流水线与重算物理配乐（带 SSE 实时日志推流）。

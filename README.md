@@ -8,10 +8,11 @@
 
 ---
 
-## 30 秒看成品
+## 30 秒看成品与在线 Studio
 
 | 交付产物 | 规格与说明 |
 |---|---|
+| 🖥 **Studio Web UI** | `npm start` -> 浏览器访问 `http://localhost:3000`，内置影院播放器、逐帧寻道、9 Beat 时间轴、实时 Canvas 模拟器、6 项门禁雷达与一键渲染 |
 | 🎬 **成片（当前版）** | [`video/code3d-v3.mp4`](video/code3d-v3.mp4) — 10.00s · 1280×720 · 24fps · 180° 快门运动模糊 · H.264+AAC |
 | 🎞 **编码后质检** | [`video/contact-sheet-v3.png`](video/contact-sheet-v3.png) — 从**编码后的 mp4** 精准抽帧拼贴，九个叙事 beat 全在 |
 | 🔊 **配乐频谱** | [`video/score-spectrogram.png`](video/score-spectrogram.png) — 滑音弯线、刮奏叠置、盖印低频长尾，全通过 6 项客观门禁 |
