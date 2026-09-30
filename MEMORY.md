@@ -51,13 +51,11 @@
 
 ---
 
-## 5. Web UI 与生产交互层 (Studio Web Interface)
+## 5. Web UI 与设计系统 (Apple Design System Integration)
 
-- **启动命令**：`npm start` (服务绑定 `0.0.0.0:3000`)
-- **功能特性**：
-  - 影院级视口回放（支持 V3/V2/V1 版本切换、逐帧步进、循环、倍速）；
-  - 9 叙事 Beat 可视化分镜时间轴，支持点击瞬间精确跳跃定位；
-  - 纯函数实时 Canvas 渲染模拟器；
-  - 6 项客观音频门禁雷达与声学校验卡片；
-  - 编码后真实 MP4 抽帧印相单与声学频谱瀑布图大图缩放审查；
-  - 一键触发全量渲染流水线与重算物理配乐（带 SSE 实时日志推流）。
+- **设计系统规范**：严格遵循 `VoltAgent/awesome-design-md/design-md/apple` (DESIGN.md)
+  - **核心准则**：摄影优先、UI 镀铬隐退、无装饰性渐变、单一直觉交互蓝 (`#0066cc` Action Blue)；
+  - **画板节奏**：纯黑 (`#000000`) ↔ 羊皮纸白 (`#f5f5f7`) ↔ 暗灰展台 (`#161617`) ↔ 纯白 (`#ffffff`) 交替脉冲；
+  - **排印系统**：SF Pro Display 负字距紧凑标题，SF Pro Text 规整正文；
+  - **按钮语法**：胶囊药丸按钮 (`border-radius: 9999px`) 与极简微形工具矩形 (`border-radius: 8px`)；
+  - **视口展台**：Pro Display XDR 式悬浮微柔阴影与毛玻璃吸顶两行导航 (44px Global + 52px Sub-nav)。

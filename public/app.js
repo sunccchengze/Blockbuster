@@ -1,36 +1,36 @@
 /**
  * @file app.js
- * @description Blockbuster Studio 前端主逻辑：
- * 1. 影院级视口播控、逐帧步进与高精度时间码；
- * 2. 9 个视听叙事 Beat 可视化时间轴与瞬态对齐；
- * 3. 实时纯函数 Canvas 模拟器；
- * 4. SSE 日志推流、API 交互与质检图像大图审查。
+ * @description Blockbuster Studio 客户端交互逻辑 (Apple Design System 版)
  */
 
 document.addEventListener("DOMContentLoaded", () => {
   // DOM 元素引用
   const video = document.getElementById("main-video");
-  const videoContainer = document.getElementById("video-container");
-  const canvasContainer = document.getElementById("canvas-container");
+  const videoWrapper = document.getElementById("video-wrapper");
+  const canvasWrapper = document.getElementById("canvas-wrapper");
   const interactiveCanvas = document.getElementById("interactive-canvas");
   const canvasCtx = interactiveCanvas.getContext("2d");
 
   const btnPlayPause = document.getElementById("btn-play-pause");
+  const iconPlay = document.getElementById("icon-play");
+  const iconPause = document.getElementById("icon-pause");
   const btnStepBack = document.getElementById("btn-step-back");
   const btnStepForward = document.getElementById("btn-step-forward");
   const btnLoop = document.getElementById("btn-loop");
   const seekSlider = document.getElementById("seek-slider");
   const playbackSpeed = document.getElementById("playback-speed");
   const timecodeDisplay = document.getElementById("timecode-display");
-  const canvasTimecode = document.getElementById("canvas-timecode");
   const frameCounter = document.getElementById("frame-counter");
-  const viewportBadge = document.getElementById("viewport-badge");
-  const beatsTrack = document.getElementById("beats-track");
+  const screenTag = document.getElementById("screen-tag");
 
-  const tabButtons = document.querySelectorAll(".tab-btn");
+  const subTabs = document.querySelectorAll(".sub-tab");
+  const beatsGrid = document.getElementById("beats-grid");
+  const artifactsList = document.getElementById("artifacts-list");
   const terminalLogs = document.getElementById("terminal-logs");
   const btnClearLogs = document.getElementById("btn-clear-logs");
-  const btnRunRender = document.getElementById("btn-run-render");
+
+  const btnNavRender = document.getElementById("nav-btn-render");
+  const btnRunRenderBottom = document.getElementById("btn-run-render-bottom");
   const btnRecomposeAudio = document.getElementById("btn-recompose-audio");
 
   const imageModal = document.getElementById("image-modal");
@@ -39,16 +39,15 @@ document.addEventListener("DOMContentLoaded", () => {
   const modalClose = document.getElementById("modal-close");
   const cardContactSheet = document.getElementById("card-contact-sheet");
   const cardSpectrogram = document.getElementById("card-spectrogram");
-  const artifactsList = document.getElementById("artifacts-list");
 
   let isInteractiveMode = false;
   let interactiveT = 0;
-  let interactiveAnimId = null;
   let isInteractivePlaying = false;
-  let totalDuration = 10.0;
+  let animFrameId = null;
   const fps = 24;
+  let totalDuration = 10.0;
 
-  // 格式化时间戳 00:00:SS.mmm
+  // 格式化时间 00:00:SS.mmm
   function formatTime(sec) {
     const s = Math.max(0, sec);
     const mins = Math.floor(s / 60);
@@ -57,19 +56,18 @@ document.addEventListener("DOMContentLoaded", () => {
     return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}.${String(ms).padStart(3, "0")}`;
   }
 
-  // 更新时间码与帧计数
-  function updateTimeDisplay(currentTime, dur) {
+  function updateTimeDisplay(curTime, dur) {
     dur = dur || totalDuration || 10.0;
-    const curFrame = Math.floor(currentTime * fps);
+    const curFrame = Math.floor(curTime * fps);
     const totalFrames = Math.round(dur * fps);
 
-    timecodeDisplay.textContent = `${formatTime(currentTime)} / ${formatTime(dur)}`;
+    timecodeDisplay.textContent = `${formatTime(curTime)} / ${formatTime(dur)}`;
     frameCounter.textContent = `FRAME ${String(curFrame).padStart(3, "0")} / ${totalFrames}`;
-    seekSlider.value = currentTime;
+    seekSlider.value = curTime;
     seekSlider.max = dur;
   }
 
-  // 1. 播放器事件绑定
+  // 1. 播放器状态同步
   video.addEventListener("timeupdate", () => {
     if (!isInteractiveMode) {
       updateTimeDisplay(video.currentTime, video.duration);
@@ -77,20 +75,27 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   video.addEventListener("play", () => {
-    btnPlayPause.textContent = "⏸ 暂停";
-    btnPlayPause.classList.add("playing");
+    iconPlay.classList.add("hidden");
+    iconPause.classList.remove("hidden");
   });
 
   video.addEventListener("pause", () => {
-    btnPlayPause.textContent = "▶ 播放";
-    btnPlayPause.classList.remove("playing");
+    iconPlay.classList.remove("hidden");
+    iconPause.classList.add("hidden");
   });
 
   btnPlayPause.addEventListener("click", () => {
     if (isInteractiveMode) {
       isInteractivePlaying = !isInteractivePlaying;
-      btnPlayPause.textContent = isInteractivePlaying ? "⏸ 暂停" : "▶ 播放";
-      if (isInteractivePlaying) runInteractiveLoop();
+      if (isInteractivePlaying) {
+        iconPlay.classList.add("hidden");
+        iconPause.classList.remove("hidden");
+        runInteractiveLoop();
+      } else {
+        iconPlay.classList.remove("hidden");
+        iconPause.classList.add("hidden");
+        cancelAnimationFrame(animFrameId);
+      }
     } else {
       if (video.paused) {
         video.play();
@@ -140,29 +145,29 @@ document.addEventListener("DOMContentLoaded", () => {
     video.playbackRate = parseFloat(e.target.value);
   });
 
-  // 2. Tab 切换版本与模式
-  tabButtons.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      tabButtons.forEach((b) => b.classList.remove("active"));
-      btn.classList.add("active");
+  // 2. Sub-Navigation Tabs 切换
+  subTabs.forEach((tab) => {
+    tab.addEventListener("click", () => {
+      subTabs.forEach((t) => t.classList.remove("active"));
+      tab.classList.add("active");
 
-      const mode = btn.dataset.type;
-      const title = btn.dataset.title;
+      const type = tab.dataset.type;
+      const badgeText = tab.dataset.badge;
 
-      if (mode === "interactive") {
+      if (type === "interactive") {
         isInteractiveMode = true;
         video.pause();
-        videoContainer.classList.add("hidden");
-        canvasContainer.classList.remove("hidden");
-        viewportBadge.textContent = "LIVE SEEK(t) EVALUATION · 纯函数逐帧即时求值";
+        videoWrapper.classList.add("hidden");
+        canvasWrapper.classList.remove("hidden");
+        screenTag.textContent = badgeText;
         renderInteractiveFrame(interactiveT);
       } else {
         isInteractiveMode = false;
-        canvasContainer.classList.add("hidden");
-        videoContainer.classList.remove("hidden");
-        viewportBadge.textContent = title;
+        canvasWrapper.classList.add("hidden");
+        videoWrapper.classList.remove("hidden");
+        screenTag.textContent = badgeText;
 
-        const src = btn.dataset.video;
+        const src = tab.dataset.video;
         if (video.src !== window.location.origin + src) {
           video.src = src;
           video.load();
@@ -171,12 +176,12 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // 3. 交互式 Canvas 纯函数渲染模拟器 (实时求解水墨与粒子)
+  // 3. 交互式纯函数实时 Canvas 渲染模拟器
   function renderInteractiveFrame(t) {
     const w = interactiveCanvas.width;
     const h = interactiveCanvas.height;
 
-    // 宣纸暖米底色
+    // 宣纸古法生宣暖米底色
     const grad = canvasCtx.createRadialGradient(w / 2, h / 2, 80, w / 2, h / 2, 650);
     grad.addColorStop(0, "#f8f5ee");
     grad.addColorStop(0.7, "#efe8d8");
@@ -184,10 +189,10 @@ document.addEventListener("DOMContentLoaded", () => {
     canvasCtx.fillStyle = grad;
     canvasCtx.fillRect(0, 0, w, h);
 
-    // 绘制水墨动态求值
+    // Beat 1: 墨滴坠落 (0.0s - 1.2s)
     if (t < 1.4) {
-      const dropP = Math.min(1.0, t / 1.15);
-      const easeY = dropP * dropP * dropP;
+      const p = Math.min(1.0, t / 1.15);
+      const easeY = p * p * p;
       const y = -40 + easeY * (h / 2 + 40);
       canvasCtx.fillStyle = "#121214";
       canvasCtx.beginPath();
@@ -195,6 +200,7 @@ document.addEventListener("DOMContentLoaded", () => {
       canvasCtx.fill();
     }
 
+    // Beat 2: 破墨水晕扩散 (1.2s - 2.8s)
     if (t >= 1.2 && t < 3.2) {
       const burstT = t - 1.2;
       const p = 1 - Math.exp(-burstT * 4);
@@ -204,6 +210,7 @@ document.addEventListener("DOMContentLoaded", () => {
       canvasCtx.fill();
     }
 
+    // Beat 3: 运笔游龙与枯笔飞白 (2.4s - 4.2s)
     if (t >= 2.4 && t < 5.2) {
       canvasCtx.strokeStyle = "#16171a";
       canvasCtx.lineWidth = 18;
@@ -214,6 +221,7 @@ document.addEventListener("DOMContentLoaded", () => {
       canvasCtx.stroke();
     }
 
+    // Beat 6: 远山构形 (6.0s - 8.0s)
     if (t >= 6.0) {
       canvasCtx.fillStyle = "rgba(40, 44, 52, 0.45)";
       canvasCtx.beginPath();
@@ -232,6 +240,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
+    // Beat 8: 朱砂古印 (8.2s - 10.0s)
     if (t >= 8.2) {
       canvasCtx.fillStyle = "#af261e";
       canvasCtx.fillRect(w / 2 + 90, h * 0.38, 54, 54);
@@ -248,9 +257,8 @@ document.addEventListener("DOMContentLoaded", () => {
     canvasCtx.fillStyle = "rgba(220, 200, 160, 0.6)";
     canvasCtx.font = "12px monospace";
     canvasCtx.textAlign = "left";
-    canvasCtx.fillText("BLOCKBUSTER LIVE CANVAS // SEEK(t) PURE EVALUATION", 50, 32);
+    canvasCtx.fillText("BLOCKBUSTER LIVE CANVAS // SEEK(t) EVALUATION", 50, 32);
 
-    canvasTimecode.textContent = `T = ${t.toFixed(3)}s / 10.000s (Frame ${Math.floor(t * fps)}/240)`;
     updateTimeDisplay(t, 10.0);
   }
 
@@ -259,39 +267,49 @@ document.addEventListener("DOMContentLoaded", () => {
     interactiveT += 1 / fps;
     if (interactiveT > totalDuration) interactiveT = 0;
     renderInteractiveFrame(interactiveT);
-    interactiveAnimId = requestAnimationFrame(runInteractiveLoop);
+    animFrameId = requestAnimationFrame(runInteractiveLoop);
   }
 
-  // 4. 加载 9 个叙事 Beat 清单并渲染时间轴
-  const beatColors = [
-    "#3b82f6", "#06b6d4", "#10b981", "#84cc16",
-    "#eab308", "#f97316", "#ef4444", "#d946ef", "#8b5cf6"
+  // 4. 加载 9 个叙事 Beat 清单并渲染为 Apple Configurator Style 卡片
+  const beatDescriptions = [
+    "宣纸微暖光晕，孤墨自天际垂直坠落",
+    "墨滴触纸炸裂，分形水晕向外毛细渗透",
+    "狂草游龙，中锋行笔与外缘枯笔飞白",
+    "焦浓重淡清五色墨韵交融层叠漫润",
+    "墨气蒸腾，细微水汽粒子离散升华",
+    "苍茫远山与天地大写意结构浮现",
+    "万象收敛，极度空灵的东方留白回甘",
+    "朱砂古印雷霆盖落，金石裂帛印泥回弹",
+    "红黑辉映，墨韵浸润入定，余韵悠长"
   ];
 
   async function loadBeats() {
     try {
       const res = await fetch("/api/beats");
       const beats = await res.json();
-      beatsTrack.innerHTML = "";
+      beatsGrid.innerHTML = "";
 
       beats.forEach((beat, idx) => {
-        const beatDur = beat.end - beat.start;
-        const widthPercent = (beatDur / totalDuration) * 100;
-        const block = document.createElement("div");
-        block.className = "beat-block";
-        block.style.width = `${widthPercent}%`;
-        block.style.backgroundColor = `${beatColors[idx % beatColors.length]}22`;
-        block.style.borderTop = `3px solid ${beatColors[idx % beatColors.length]}`;
-
-        block.innerHTML = `
-          <span class="beat-num">BEAT ${beat.id}</span>
-          <span class="beat-label">${beat.name.split(" ")[0]}</span>
-          <span class="beat-time">${beat.start.toFixed(1)}s</span>
+        const card = document.createElement("div");
+        card.className = "beat-card";
+        card.innerHTML = `
+          <div>
+            <div class="beat-card-top">
+              <span class="beat-chip">Beat 0${beat.id}</span>
+              <span class="beat-time-range">${beat.start.toFixed(1)}s ~ ${beat.end.toFixed(1)}s</span>
+            </div>
+            <h3 class="beat-card-title">${beat.name.split(" ")[0]}</h3>
+            <p class="beat-card-desc">${beatDescriptions[idx] || beat.name}</p>
+          </div>
+          <div class="beat-jump-hint">
+            <span>跳转关键帧</span> ↗
+          </div>
         `;
 
-        block.title = `${beat.name} (${beat.start.toFixed(2)}s ~ ${beat.end.toFixed(2)}s)`;
+        card.addEventListener("click", () => {
+          // 平滑滚动回 Hero 播放器并定位
+          document.getElementById("hero").scrollIntoView({ behavior: "smooth" });
 
-        block.addEventListener("click", () => {
           if (isInteractiveMode) {
             interactiveT = beat.start;
             renderInteractiveFrame(interactiveT);
@@ -301,10 +319,10 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         });
 
-        beatsTrack.appendChild(block);
+        beatsGrid.appendChild(card);
       });
-    } catch (err) {
-      console.error("加载 Beat 清单失败:", err);
+    } catch (e) {
+      console.error("加载 Beat 失败", e);
     }
   }
 
@@ -317,30 +335,30 @@ document.addEventListener("DOMContentLoaded", () => {
 
       list.forEach((item) => {
         const row = document.createElement("div");
-        row.className = "artifact-item";
+        row.className = "apple-artifact-item";
         row.innerHTML = `
-          <div class="artifact-info">
-            <span class="artifact-title">${item.name}</span>
-            <span class="artifact-sub">${item.filename} · ${item.sizeFormatted || "就绪"}</span>
+          <div class="artifact-left">
+            <span class="art-title">${item.name}</span>
+            <span class="art-detail">${item.filename} · ${item.sizeFormatted || "就绪"}</span>
           </div>
-          <a href="${item.path}" download="${item.filename}" class="artifact-btn">下载</a>
+          <a href="${item.path}" download="${item.filename}" class="btn-download-pill">下载</a>
         `;
         artifactsList.appendChild(row);
       });
-    } catch (err) {
-      console.error("加载资产清单失败:", err);
+    } catch (e) {
+      console.error("加载资产失败", e);
     }
   }
 
   // 6. 模态框大图核验
   cardContactSheet.addEventListener("click", () => {
-    modalTitle.textContent = "9 叙事 Beat 九宫格接触印相质检单 (来自编码后 code3d-v3.mp4)";
+    modalTitle.textContent = "编码后真实抽帧九宫格印相质检单 (来自已生成的 code3d-v3.mp4)";
     modalImg.src = "/video/contact-sheet-v3.png?" + Date.now();
     imageModal.classList.remove("hidden");
   });
 
   cardSpectrogram.addEventListener("click", () => {
-    modalTitle.textContent = "v3.1 物理建模配乐声学频谱瀑布图 (True Physical String Acoustics)";
+    modalTitle.textContent = "v3.1 物理建模古琴声学频谱瀑布图 (True Physical String Acoustics)";
     modalImg.src = "/video/score-spectrogram.png?" + Date.now();
     imageModal.classList.remove("hidden");
   });
@@ -355,7 +373,7 @@ document.addEventListener("DOMContentLoaded", () => {
       try {
         const data = JSON.parse(e.data);
         const line = document.createElement("div");
-        line.className = "log-line";
+        line.className = "term-line";
         line.textContent = `[${data.time}] ${data.text}`;
         terminalLogs.appendChild(line);
         terminalLogs.scrollTop = terminalLogs.scrollHeight;
@@ -367,32 +385,36 @@ document.addEventListener("DOMContentLoaded", () => {
     terminalLogs.innerHTML = "";
   });
 
-  // 8. 触发重新渲染流水线
-  btnRunRender.addEventListener("click", async () => {
+  // 8. 全量流水线渲染触发
+  async function triggerRender() {
     if (!confirm("确定要启动全量流水线渲染吗？将重新计算 V1、V2、v3.1 配乐、V3 成片并执行 MP4 抽帧质检。")) return;
     try {
+      document.getElementById("director").scrollIntoView({ behavior: "smooth" });
       const res = await fetch("/api/render", { method: "POST" });
       const data = await res.json();
-      alert(data.message || "渲染已在后台启动，请关注左侧日志窗口");
-    } catch (err) {
-      alert("触发失败: " + err.message);
+      alert(data.message || "全量渲染流水线已在后台启动，可在下方终端窗口观察实时日志");
+    } catch (e) {
+      alert("触发失败: " + e.message);
     }
-  });
+  }
+
+  btnNavRender.addEventListener("click", triggerRender);
+  btnRunRenderBottom.addEventListener("click", triggerRender);
 
   btnRecomposeAudio.addEventListener("click", async () => {
     try {
       const res = await fetch("/api/audio", { method: "POST" });
       const data = await res.json();
       if (data.success) {
-        alert("物理建模配乐重算成功！6 项客观门禁全部合格！");
+        alert("物理建模配乐重算完成！6 项客观声学门禁全部通过！");
         loadArtifacts();
       }
-    } catch (err) {
-      alert("音频重算失败: " + err.message);
+    } catch (e) {
+      alert("重算音频失败: " + e.message);
     }
   });
 
-  // 初始化
+  // 初始化加载
   loadBeats();
   loadArtifacts();
   setupSSE();
