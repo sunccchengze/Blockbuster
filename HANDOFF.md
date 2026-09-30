@@ -2,7 +2,7 @@
 
 **最后更新时间**: 2026-09-30 (Asia/Shanghai)  
 **当前工作分支**: `arena/01a0f07e-blockbuster`  
-**最新远端提交**: `1e33ff5` (`origin/arena/01a0f07e-blockbuster`)  
+**最新远端提交**: `add90b9` (`origin/arena/01a0f07e-blockbuster`)  
 **关联 Pull Request**: [#1 feat: universal prompt-to-video production pipeline and blockbuster skill](https://github.com/sunccchengze/Blockbuster/pull/1)  
 **合并状态**: 已完整合入 `origin/main`（含 `code3d-demo/` 及其全部原始脚本、资源、成片、QA 文件），未删除对方任何资产；同时遵照指示彻底清除了前端网页设计（`public/` 与 `server.js`），全面收敛为可持续的通用需求驱动视频生成流水线 (Universal Pipeline)。
 
