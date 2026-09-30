@@ -1,6 +1,6 @@
 /**
  * @file app.js
- * @description Blockbuster Studio 客户端交互逻辑 (Apple Design System 版)
+ * @description Blockbuster Studio 客户端交互逻辑 (Strict Apple Design System)
  */
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -21,15 +21,17 @@ document.addEventListener("DOMContentLoaded", () => {
   const playbackSpeed = document.getElementById("playback-speed");
   const timecodeDisplay = document.getElementById("timecode-display");
   const frameCounter = document.getElementById("frame-counter");
-  const screenTag = document.getElementById("screen-tag");
+  const screenBadge = document.getElementById("screen-badge");
 
-  const subTabs = document.querySelectorAll(".sub-tab");
+  const segButtons = document.querySelectorAll(".seg-btn");
   const beatsGrid = document.getElementById("beats-grid");
   const artifactsList = document.getElementById("artifacts-list");
   const terminalLogs = document.getElementById("terminal-logs");
   const btnClearLogs = document.getElementById("btn-clear-logs");
 
   const btnNavRender = document.getElementById("nav-btn-render");
+  const btnHeroWatch = document.getElementById("btn-hero-watch");
+  const btnHeroPipeline = document.getElementById("btn-hero-pipeline");
   const btnRunRenderBottom = document.getElementById("btn-run-render-bottom");
   const btnRecomposeAudio = document.getElementById("btn-recompose-audio");
 
@@ -47,7 +49,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const fps = 24;
   let totalDuration = 10.0;
 
-  // 格式化时间 00:00:SS.mmm
   function formatTime(sec) {
     const s = Math.max(0, sec);
     const mins = Math.floor(s / 60);
@@ -145,29 +146,29 @@ document.addEventListener("DOMContentLoaded", () => {
     video.playbackRate = parseFloat(e.target.value);
   });
 
-  // 2. Sub-Navigation Tabs 切换
-  subTabs.forEach((tab) => {
-    tab.addEventListener("click", () => {
-      subTabs.forEach((t) => t.classList.remove("active"));
-      tab.classList.add("active");
+  // 2. Sub-Nav Segmented Control
+  segButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      segButtons.forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
 
-      const type = tab.dataset.type;
-      const badgeText = tab.dataset.badge;
+      const type = btn.dataset.type;
+      const badgeText = btn.dataset.badge;
 
       if (type === "interactive") {
         isInteractiveMode = true;
         video.pause();
         videoWrapper.classList.add("hidden");
         canvasWrapper.classList.remove("hidden");
-        screenTag.textContent = badgeText;
+        screenBadge.textContent = badgeText;
         renderInteractiveFrame(interactiveT);
       } else {
         isInteractiveMode = false;
         canvasWrapper.classList.add("hidden");
         videoWrapper.classList.remove("hidden");
-        screenTag.textContent = badgeText;
+        screenBadge.textContent = badgeText;
 
-        const src = tab.dataset.video;
+        const src = btn.dataset.video;
         if (video.src !== window.location.origin + src) {
           video.src = src;
           video.load();
@@ -176,12 +177,16 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
+  btnHeroWatch.addEventListener("click", () => {
+    video.play();
+  });
+
   // 3. 交互式纯函数实时 Canvas 渲染模拟器
   function renderInteractiveFrame(t) {
     const w = interactiveCanvas.width;
     const h = interactiveCanvas.height;
 
-    // 宣纸古法生宣暖米底色
+    // 宣纸底色
     const grad = canvasCtx.createRadialGradient(w / 2, h / 2, 80, w / 2, h / 2, 650);
     grad.addColorStop(0, "#f8f5ee");
     grad.addColorStop(0.7, "#efe8d8");
@@ -189,7 +194,7 @@ document.addEventListener("DOMContentLoaded", () => {
     canvasCtx.fillStyle = grad;
     canvasCtx.fillRect(0, 0, w, h);
 
-    // Beat 1: 墨滴坠落 (0.0s - 1.2s)
+    // 墨滴坠落
     if (t < 1.4) {
       const p = Math.min(1.0, t / 1.15);
       const easeY = p * p * p;
@@ -200,7 +205,7 @@ document.addEventListener("DOMContentLoaded", () => {
       canvasCtx.fill();
     }
 
-    // Beat 2: 破墨水晕扩散 (1.2s - 2.8s)
+    // 破墨扩散
     if (t >= 1.2 && t < 3.2) {
       const burstT = t - 1.2;
       const p = 1 - Math.exp(-burstT * 4);
@@ -210,7 +215,7 @@ document.addEventListener("DOMContentLoaded", () => {
       canvasCtx.fill();
     }
 
-    // Beat 3: 运笔游龙与枯笔飞白 (2.4s - 4.2s)
+    // 运笔狂草
     if (t >= 2.4 && t < 5.2) {
       canvasCtx.strokeStyle = "#16171a";
       canvasCtx.lineWidth = 18;
@@ -221,7 +226,7 @@ document.addEventListener("DOMContentLoaded", () => {
       canvasCtx.stroke();
     }
 
-    // Beat 6: 远山构形 (6.0s - 8.0s)
+    // 远山意象
     if (t >= 6.0) {
       canvasCtx.fillStyle = "rgba(40, 44, 52, 0.45)";
       canvasCtx.beginPath();
@@ -240,7 +245,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    // Beat 8: 朱砂古印 (8.2s - 10.0s)
+    // 朱砂古印
     if (t >= 8.2) {
       canvasCtx.fillStyle = "#af261e";
       canvasCtx.fillRect(w / 2 + 90, h * 0.38, 54, 54);
@@ -249,15 +254,10 @@ document.addEventListener("DOMContentLoaded", () => {
       canvasCtx.strokeRect(w / 2 + 95, h * 0.38 + 5, 44, 44);
     }
 
-    // 宽银幕遮幅
-    canvasCtx.fillStyle = "#0c0d10";
+    // 宽银幕黑边
+    canvasCtx.fillStyle = "#000000";
     canvasCtx.fillRect(0, 0, w, 50);
     canvasCtx.fillRect(0, h - 50, w, 50);
-
-    canvasCtx.fillStyle = "rgba(220, 200, 160, 0.6)";
-    canvasCtx.font = "12px monospace";
-    canvasCtx.textAlign = "left";
-    canvasCtx.fillText("BLOCKBUSTER LIVE CANVAS // SEEK(t) EVALUATION", 50, 32);
 
     updateTimeDisplay(t, 10.0);
   }
@@ -270,7 +270,7 @@ document.addEventListener("DOMContentLoaded", () => {
     animFrameId = requestAnimationFrame(runInteractiveLoop);
   }
 
-  // 4. 加载 9 个叙事 Beat 清单并渲染为 Apple Configurator Style 卡片
+  // 4. 加载 9 个叙事 Beat 清单并渲染为 Apple Store Utility Cards
   const beatDescriptions = [
     "宣纸微暖光晕，孤墨自天际垂直坠落",
     "墨滴触纸炸裂，分形水晕向外毛细渗透",
@@ -291,25 +291,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
       beats.forEach((beat, idx) => {
         const card = document.createElement("div");
-        card.className = "beat-card";
+        card.className = "apple-story-card";
         card.innerHTML = `
           <div>
-            <div class="beat-card-top">
-              <span class="beat-chip">Beat 0${beat.id}</span>
-              <span class="beat-time-range">${beat.start.toFixed(1)}s ~ ${beat.end.toFixed(1)}s</span>
+            <div class="card-top-meta">
+              <span class="card-beat-tag">Beat 0${beat.id}</span>
+              <span class="card-time-span">${beat.start.toFixed(1)}s ~ ${beat.end.toFixed(1)}s</span>
             </div>
-            <h3 class="beat-card-title">${beat.name.split(" ")[0]}</h3>
-            <p class="beat-card-desc">${beatDescriptions[idx] || beat.name}</p>
+            <h3 class="card-beat-title">${beat.name.split(" ")[0]}</h3>
+            <p class="card-beat-body">${beatDescriptions[idx] || beat.name}</p>
           </div>
-          <div class="beat-jump-hint">
+          <div class="card-action-link">
             <span>跳转关键帧</span> ↗
           </div>
         `;
 
         card.addEventListener("click", () => {
-          // 平滑滚动回 Hero 播放器并定位
           document.getElementById("hero").scrollIntoView({ behavior: "smooth" });
-
           if (isInteractiveMode) {
             interactiveT = beat.start;
             renderInteractiveFrame(interactiveT);
@@ -335,13 +333,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
       list.forEach((item) => {
         const row = document.createElement("div");
-        row.className = "apple-artifact-item";
+        row.className = "artifact-row";
         row.innerHTML = `
-          <div class="artifact-left">
-            <span class="art-title">${item.name}</span>
-            <span class="art-detail">${item.filename} · ${item.sizeFormatted || "就绪"}</span>
+          <div class="art-info">
+            <span class="art-name">${item.name}</span>
+            <span class="art-spec">${item.filename} · ${item.sizeFormatted || "就绪"}</span>
           </div>
-          <a href="${item.path}" download="${item.filename}" class="btn-download-pill">下载</a>
+          <a href="${item.path}" download="${item.filename}" class="apple-action-link">下载 ↗</a>
         `;
         artifactsList.appendChild(row);
       });
@@ -389,7 +387,7 @@ document.addEventListener("DOMContentLoaded", () => {
   async function triggerRender() {
     if (!confirm("确定要启动全量流水线渲染吗？将重新计算 V1、V2、v3.1 配乐、V3 成片并执行 MP4 抽帧质检。")) return;
     try {
-      document.getElementById("director").scrollIntoView({ behavior: "smooth" });
+      document.getElementById("studio").scrollIntoView({ behavior: "smooth" });
       const res = await fetch("/api/render", { method: "POST" });
       const data = await res.json();
       alert(data.message || "全量渲染流水线已在后台启动，可在下方终端窗口观察实时日志");
@@ -399,6 +397,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   btnNavRender.addEventListener("click", triggerRender);
+  btnHeroPipeline.addEventListener("click", triggerRender);
   btnRunRenderBottom.addEventListener("click", triggerRender);
 
   btnRecomposeAudio.addEventListener("click", async () => {
@@ -414,7 +413,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // 初始化加载
   loadBeats();
   loadArtifacts();
   setupSSE();

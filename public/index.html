@@ -3,82 +3,81 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Blockbuster — 确定性代码渲染影片与导演协议</title>
+  <title>Blockbuster — 代码渲染影片与导演协议</title>
   <link rel="stylesheet" href="style.css">
 </head>
-<body class="apple-theme">
-  <!-- Apple Global Navigation (44px) -->
+<body>
+  <!-- 1. Apple Global Nav (44px, #000000) -->
   <header class="global-nav">
-    <div class="nav-content">
-      <div class="nav-brand">
-        <svg class="apple-logo-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
-          <polyline points="2 17 12 22 22 17"></polyline>
-          <polyline points="2 12 12 17 22 12"></polyline>
+    <div class="nav-container">
+      <a href="#" class="nav-logo" aria-label="Blockbuster 首页">
+        <svg width="15" height="18" viewBox="0 0 170 170" fill="currentColor">
+          <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.7-3.04-7.7-7.85-12-14.43-6-9.14-10.74-19.55-14.23-31.25-3.48-11.7-5.23-23.08-5.23-34.13 0-14.36 3.69-26.6 11.06-36.7 7.37-10.11 16.73-15.28 28.09-15.52 4.13 0 9.17 1.25 15.11 3.75 5.95 2.5 9.77 3.8 11.47 3.9 1.34 0 5.42-1.39 12.23-4.16 6.81-2.77 12.59-3.99 17.33-3.66 12.87.89 22.84 5.75 29.92 14.58-11.47 6.94-17.07 16.63-16.79 29.07.28 9.77 4.15 17.93 11.6 24.47 7.45 6.54 16.27 10.37 26.46 11.49-2.22 6.78-4.99 13.91-8.31 21.39zM119.22 31.84c0-7.72 2.76-14.99 8.28-21.81 5.52-6.82 12.39-10.93 20.61-12.33.22 1.11.33 2.11.33 3 0 7.61-2.91 15.05-8.73 22.32-5.82 7.27-12.73 11.32-20.73 12.16-.11-1.11-.17-2.11-.17-3.34z"/>
         </svg>
-        <span class="nav-brand-title">Blockbuster</span>
-      </div>
-
-      <nav class="nav-links">
-        <a href="#hero" class="nav-link">成片</a>
-        <a href="#beats" class="nav-link">分镜时序</a>
-        <a href="#qc-specs" class="nav-link">技术规格</a>
-        <a href="#domains" class="nav-link">全域矩阵</a>
-        <a href="#director" class="nav-link">导演中枢</a>
+      </a>
+      <nav class="nav-menu">
+        <a href="#hero" class="nav-item">成片</a>
+        <a href="#story" class="nav-item">9个Beat</a>
+        <a href="#specs" class="nav-item">声学门禁</a>
+        <a href="#domains" class="nav-item">全领域</a>
+        <a href="#studio" class="nav-item">导演中枢</a>
+        <a href="https://github.com/sunccchengze/Blockbuster" target="_blank" class="nav-item">GitHub</a>
       </nav>
-
-      <div class="nav-actions">
-        <a href="https://github.com/sunccchengze/Blockbuster" target="_blank" class="nav-link-subtle" title="查看 GitHub 仓库">GitHub</a>
-        <button id="nav-btn-render" class="btn-pill-small">全量渲染</button>
+      <div class="nav-right">
+        <button id="nav-btn-render" class="apple-btn-primary-small">立即渲染</button>
       </div>
     </div>
   </header>
 
-  <!-- Apple Sticky Sub-Navigation Strip (52px) -->
-  <div class="sub-nav">
-    <div class="sub-nav-content">
+  <!-- 2. Apple Sub-Nav Strip (52px, Frosted) -->
+  <nav class="sub-nav">
+    <div class="sub-nav-container">
       <div class="sub-nav-left">
-        <h2 class="sub-nav-title">code3d-demo「墨」</h2>
-        <span class="sub-nav-badge">V3.1 交付级</span>
+        <span class="sub-nav-title">code3d-demo「墨」</span>
+        <span class="sub-nav-chip">V3.1 交付级</span>
       </div>
       <div class="sub-nav-right">
-        <div class="sub-nav-tabs">
-          <button class="sub-tab active" data-video="/video/code3d-v3.mp4" data-type="video" data-badge="V3「墨」成片 · 24fps 180°快门">V3「墨」成片</button>
-          <button class="sub-tab" data-video="/video/code3d-v2.mp4" data-type="video" data-badge="V2 金属PBR · 双动态光源">V2 金属PBR</button>
-          <button class="sub-tab" data-video="/video/code3d-v1.mp4" data-type="video" data-badge="V1 路线验证 · 3D线框">V1 路线验证</button>
-          <button class="sub-tab" data-type="interactive" data-badge="实时纯函数求值模式">交互 Canvas</button>
+        <div class="version-segmented-control">
+          <button class="seg-btn active" data-video="/video/code3d-v3.mp4" data-type="video" data-badge="V3「墨」成片 · 24fps 180°快门">V3 成片</button>
+          <button class="seg-btn" data-video="/video/code3d-v2.mp4" data-type="video" data-badge="V2 金属PBR · 双动态光源">V2 金属PBR</button>
+          <button class="seg-btn" data-video="/video/code3d-v1.mp4" data-type="video" data-badge="V1 路线验证 · 3D线框">V1 验证</button>
+          <button class="seg-btn" data-type="interactive" data-badge="实时纯函数求值模式">交互 Canvas</button>
         </div>
-        <button id="btn-recompose-audio" class="btn-pill-secondary">重算物理配乐</button>
+        <button id="btn-recompose-audio" class="apple-btn-secondary-pill">重算物理配乐</button>
       </div>
     </div>
-  </div>
+  </nav>
 
-  <main class="page-body">
-    <!-- Hero Section (Dark Canvas / Museum Gallery Theater) -->
-    <section id="hero" class="section-hero">
-      <div class="hero-header">
+  <!-- 3. TILE 1: HERO (Pure Black #000000, Full-Bleed Product Theater) -->
+  <section id="hero" class="tile-hero">
+    <div class="tile-content">
+      <div class="hero-copy-block">
         <p class="hero-eyebrow">这里没有一段像素是“生成”出来的</p>
         <h1 class="hero-headline">模型产出的是程序。<br>不是视频。</h1>
-        <p class="hero-subhead">确定性场景代码逐帧求值 · 180° 快门曝光积分 · 纯数学物理建模拨弦配乐</p>
+        <p class="hero-tagline">确定性场景代码逐帧求值 · 180° 快门曝光积分 · 纯离散数学物理建模真弦乐</p>
+        <div class="hero-cta-group">
+          <button id="btn-hero-watch" class="apple-btn-primary">观看成片</button>
+          <button id="btn-hero-pipeline" class="apple-btn-secondary-pill">运行完整流水线</button>
+        </div>
       </div>
 
-      <!-- Cinema Screen Container (Pro Display XDR / Museum Pedestal Style) -->
-      <div class="cinema-stage">
-        <div class="screen-frame">
-          <div id="video-wrapper" class="screen-display">
+      <!-- The Product Display Frame (Signature Apple Drop Shadow) -->
+      <div class="product-theater">
+        <div class="product-screen-pedestal">
+          <div id="video-wrapper" class="product-viewport">
             <video id="main-video" src="/video/code3d-v3.mp4" playsinline preload="auto"></video>
-            <div class="screen-tag" id="screen-tag">V3「墨」成片 · 24fps 180°快门 · H.264+AAC</div>
+            <div id="screen-badge" class="screen-corner-badge">V3「墨」成片 · 24fps 180°快门 · H.264+AAC</div>
           </div>
 
-          <div id="canvas-wrapper" class="screen-display hidden">
+          <div id="canvas-wrapper" class="product-viewport hidden">
             <canvas id="interactive-canvas" width="1280" height="720"></canvas>
-            <div class="screen-tag">LIVE SEEK(T) EVALUATION · 纯数学实时光栅化</div>
+            <div class="screen-corner-badge">LIVE SEEK(T) EVALUATION · 纯数学实时光栅化</div>
           </div>
 
-          <!-- Minimalist Apple Floating Controller Strip -->
-          <div class="floating-controls">
-            <div class="ctrl-group-left">
-              <button id="btn-play-pause" class="btn-circle-play" aria-label="播放/暂停">
+          <!-- Minimalist Transport Bar Floating Beneath Screen -->
+          <div class="screen-transport-bar">
+            <div class="transport-left">
+              <button id="btn-play-pause" class="apple-icon-circle-btn" aria-label="播放/暂停">
                 <svg id="icon-play" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                   <polygon points="5 3 19 12 5 21 5 3"></polygon>
                 </svg>
@@ -87,217 +86,260 @@
                   <rect x="14" y="4" width="4" height="16"></rect>
                 </svg>
               </button>
-              <button id="btn-step-back" class="btn-circle-subtle" title="后退 1 帧">⏮</button>
-              <button id="btn-step-forward" class="btn-circle-subtle" title="前进 1 帧">⏭</button>
+              <button id="btn-step-back" class="apple-text-btn" title="后退 1 帧">⏮ -1帧</button>
+              <button id="btn-step-forward" class="apple-text-btn" title="前进 1 帧">+1帧 ⏭</button>
             </div>
 
-            <div class="ctrl-group-center">
-              <input type="range" id="seek-slider" min="0" max="10" step="0.041666" value="0" class="apple-slider">
+            <div class="transport-center">
+              <input type="range" id="seek-slider" min="0" max="10" step="0.041666" value="0" class="apple-range">
             </div>
 
-            <div class="ctrl-group-right">
-              <span id="timecode-display" class="timecode">00:00:00.000 / 00:00:10.000</span>
-              <span id="frame-counter" class="frame-tag">FRAME 000 / 240</span>
-              <button id="btn-loop" class="btn-circle-subtle active" title="循环播放">🔁</button>
-              <select id="playback-speed" class="apple-select">
-                <option value="0.25">0.25x</option>
+            <div class="transport-right">
+              <span id="timecode-display" class="timecode-text">00:00:00.000 / 00:00:10.000</span>
+              <span id="frame-counter" class="frame-tag-pill">FRAME 000 / 240</span>
+              <button id="btn-loop" class="apple-text-btn active" title="循环播放">🔁 循环</button>
+              <select id="playback-speed" class="apple-dropdown">
+                <option value="0.25">0.25x (慢放)</option>
                 <option value="0.5">0.5x</option>
-                <option value="1.0" selected>1.0x</option>
+                <option value="1.0" selected>1.0x (原速)</option>
                 <option value="1.5">1.5x</option>
               </select>
             </div>
           </div>
         </div>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <!-- Narrative Beats Section (Apple Light Parchment Section) -->
-    <section id="beats" class="section-parchment">
-      <div class="section-wrapper">
-        <div class="section-intro">
-          <p class="section-eyebrow">叙事工程化</p>
-          <h2 class="section-headline">九个叙事 Beat。<br>毫秒级声画咬合。</h2>
-          <p class="section-description">视觉转场曲线与物理乐器瞬态共享同一份微秒级时序清单（Timeline Manifest），彻底告别声画貌合神离。</p>
+  <!-- 4. TILE 2: NARRATIVE BEATS (Apple Signature Parchment #f5f5f7) -->
+  <section id="story" class="tile-parchment">
+    <div class="tile-content">
+      <div class="tile-header-block">
+        <p class="tile-eyebrow">叙事工程化</p>
+        <h2 class="tile-headline">九个叙事 Beat。<br>毫秒级声画咬合。</h2>
+        <p class="tile-lead">视觉转场曲线与物理乐器瞬态共享同一份微秒级时序清单（Timeline Manifest），彻底告别声画貌合神离。</p>
+      </div>
+
+      <div id="beats-grid" class="apple-store-card-grid">
+        <!-- 动态注入 9 个卡片 (Apple Store Utility Card 18px rounded) -->
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. TILE 3: QC & TECH SPECS (Near-Black Tile 1 #272729) -->
+  <section id="specs" class="tile-dark-1">
+    <div class="tile-content">
+      <div class="tile-header-block">
+        <p class="tile-eyebrow-accent">双模客观质检</p>
+        <h2 class="tile-headline-dark">六项客观声学门禁。<br>真实编码抽帧印相。</h2>
+        <p class="tile-lead-dark">拒绝主观玄学。每一条交付的影片必须从最终压制出的 MP4 文件抽帧拼贴印相单，音频必须全绿通过国际声学标准。</p>
+      </div>
+
+      <!-- 6 Metrics Callout (Apple Tech Specs Style) -->
+      <div class="apple-specs-row">
+        <div class="spec-callout">
+          <span class="spec-label">Gate 1: 积分响度</span>
+          <span class="spec-stat">-13.89 <span class="spec-unit">LUFS</span></span>
+          <span class="spec-sub">PASS · 标靶 -14.0 ± 1.0</span>
         </div>
-
-        <!-- 9 Narrative Beats Grid (Apple Product Configurator Tile Aesthetic) -->
-        <div id="beats-grid" class="beats-grid">
-          <!-- 动态注入 9 个卡片 -->
+        <div class="spec-callout">
+          <span class="spec-label">Gate 2: 真实峰值</span>
+          <span class="spec-stat">-1.20 <span class="spec-unit">dBTP</span></span>
+          <span class="spec-sub">PASS · 规范 ≤ -1.0 dBTP</span>
+        </div>
+        <div class="spec-callout">
+          <span class="spec-label">Gate 3: 动态范围</span>
+          <span class="spec-stat">9.73 <span class="spec-unit">LU</span></span>
+          <span class="spec-sub">PASS · 范围 4.0 ~ 18.0 LU</span>
+        </div>
+        <div class="spec-callout">
+          <span class="spec-label">Gate 4: 直流偏置</span>
+          <span class="spec-stat">-86.09 <span class="spec-unit">dBFS</span></span>
+          <span class="spec-sub">PASS · 底噪 &lt; -60 dBFS</span>
+        </div>
+        <div class="spec-callout">
+          <span class="spec-label">Gate 5: 物理谐振</span>
+          <span class="spec-stat">琴箱共鸣</span>
+          <span class="spec-sub">PASS · 无超频电子啸叫</span>
+        </div>
+        <div class="spec-callout">
+          <span class="spec-label">Gate 6: 重音漂移</span>
+          <span class="spec-stat">12.5 <span class="spec-unit">ms</span></span>
+          <span class="spec-sub">PASS · 容差 ≤ 41.6ms (1帧)</span>
         </div>
       </div>
-    </section>
 
-    <!-- QC Gates & Audio Tech Specs Section (Apple Dark Tile 1) -->
-    <section id="qc-specs" class="section-dark-tile">
-      <div class="section-wrapper">
-        <div class="section-intro">
-          <p class="section-eyebrow-accent">双模客观质检</p>
-          <h2 class="section-headline-dark">六项客观声学门禁。<br>真实编码抽帧印相。</h2>
-          <p class="section-description-dark">拒绝主观玄学。每一条交付的影片必须从最终压制出的 MP4 文件抽帧拼贴印相单，音频必须全绿通过国际声学标准。</p>
+      <!-- Dual Inspection Gallery Showcase -->
+      <div class="apple-gallery-pair">
+        <div class="apple-gallery-tile" id="card-contact-sheet">
+          <div class="tile-gallery-top">
+            <h3 class="tile-gallery-title">编码后真实抽帧印相单</h3>
+            <span class="apple-action-link">点按放大查看 ↗</span>
+          </div>
+          <div class="gallery-img-pedestal">
+            <img src="/video/contact-sheet-v3.png" alt="Contact Sheet">
+          </div>
+          <p class="gallery-img-caption">直接调用 FFmpeg 从已压制的 code3d-v3.mp4 中精准提取 9 个 Beat 的物理帧拼贴。</p>
         </div>
 
-        <!-- Tech Specs Numbers Matrix (Apple Style Metric Callouts) -->
-        <div class="specs-metrics-grid">
-          <div class="metric-card">
-            <span class="metric-label">Gate 1: 积分响度</span>
-            <span class="metric-number">-13.89 <span class="metric-unit">LUFS</span></span>
-            <span class="metric-status">PASS · 标靶 -14.0 ± 1.0</span>
+        <div class="apple-gallery-tile" id="card-spectrogram">
+          <div class="tile-gallery-top">
+            <h3 class="tile-gallery-title">物理建模古琴声学频谱瀑布图</h3>
+            <span class="apple-action-link">点按放大查看 ↗</span>
           </div>
-
-          <div class="metric-card">
-            <span class="metric-label">Gate 2: 真实峰值</span>
-            <span class="metric-number">-1.20 <span class="metric-unit">dBTP</span></span>
-            <span class="metric-status">PASS · 规范 ≤ -1.0 dBTP</span>
+          <div class="gallery-img-pedestal">
+            <img src="/video/score-spectrogram.png" alt="Spectrogram">
           </div>
-
-          <div class="metric-card">
-            <span class="metric-label">Gate 3: 动态范围</span>
-            <span class="metric-number">9.73 <span class="metric-unit">LU</span></span>
-            <span class="metric-status">PASS · 范围 4.0 ~ 18.0 LU</span>
-          </div>
-
-          <div class="metric-card">
-            <span class="metric-label">Gate 4: 直流抗削波</span>
-            <span class="metric-number">-86.09 <span class="metric-unit">dBFS</span></span>
-            <span class="metric-status">PASS · 底噪 &lt; -60 dBFS</span>
-          </div>
-
-          <div class="metric-card">
-            <span class="metric-label">Gate 5: 物理谐振</span>
-            <span class="metric-number">琴箱长尾</span>
-            <span class="metric-status">PASS · 无电子啸叫</span>
-          </div>
-
-          <div class="metric-card">
-            <span class="metric-label">Gate 6: 重音漂移</span>
-            <span class="metric-number">12.5 <span class="metric-unit">ms</span></span>
-            <span class="metric-status">PASS · 容差 ≤ 41.6ms</span>
-          </div>
-        </div>
-
-        <!-- Dual Inspection Showcase (Gallery Pair) -->
-        <div class="gallery-pair">
-          <div class="gallery-card" id="card-contact-sheet">
-            <div class="gallery-header">
-              <span class="gallery-title">编码后真实抽帧印相单</span>
-              <span class="gallery-link">点按放大查看 ↗</span>
-            </div>
-            <div class="gallery-img-container">
-              <img src="/video/contact-sheet-v3.png" alt="9 Beat Contact Sheet">
-            </div>
-            <p class="gallery-caption">直接调用 FFmpeg 从已压制的 code3d-v3.mp4 中精准提取 9 个 Beat 的物理帧拼贴。</p>
-          </div>
-
-          <div class="gallery-card" id="card-spectrogram">
-            <div class="gallery-header">
-              <span class="gallery-title">物理建模古琴声学频谱瀑布图</span>
-              <span class="gallery-link">点按放大查看 ↗</span>
-            </div>
-            <div class="gallery-img-container">
-              <img src="/video/score-spectrogram.png" alt="Score Spectrogram">
-            </div>
-            <p class="gallery-caption">清晰可见泛音点振动、分数延时滑音轨迹与大印盖落次低频冲击波。</p>
-          </div>
+          <p class="gallery-img-caption">清晰可见泛音点振动、分数延时滑音轨迹与大印盖落次低频冲击波。</p>
         </div>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <!-- All-Domain Architecture Section (Pure White Canvas) -->
-    <section id="domains" class="section-white">
-      <div class="section-wrapper">
-        <div class="section-intro">
-          <p class="section-eyebrow">全领域覆盖 · 样样精通</p>
-          <h2 class="section-headline">一个导演协议。<br>掌控所有视觉流派。</h2>
-          <p class="section-description">「墨」是验证系统物理极限与确定性算法的压力测试标杆。Blockbuster 导演协议全面覆盖五大主流视频领域。</p>
+  <!-- 6. TILE 4: ALL-DOMAIN MATRIX (Pure White #ffffff) -->
+  <section id="domains" class="tile-white">
+    <div class="tile-content">
+      <div class="tile-header-block">
+        <p class="tile-eyebrow">全领域覆盖 · 样样精通</p>
+        <h2 class="tile-headline">一个导演协议。<br>掌控所有视觉流派。</h2>
+        <p class="tile-lead">「墨」是验证系统物理极限与确定性算法的压力测试标杆。Blockbuster 导演协议全面覆盖五大主流视频领域。</p>
+      </div>
+
+      <div class="apple-domain-grid">
+        <div class="domain-card active">
+          <span class="card-domain-badge">Domain D</span>
+          <h3 class="card-domain-title">艺术风格化</h3>
+          <p class="card-domain-desc">宣纸纤维 Shader、焦浓重淡清五色水墨扩散、枯笔飞白、180° 高斯快门曝光积分。</p>
+          <div class="card-domain-footer">扩展 Karplus-Strong 物理建模古琴配乐</div>
         </div>
 
-        <div class="domain-cards-grid">
-          <div class="domain-tile active">
-            <span class="tile-tag">Domain D</span>
-            <h3 class="tile-title">艺术风格化</h3>
-            <p class="tile-desc">宣纸纤维 Shader、焦浓重淡清五色水墨扩散、枯笔飞白、180° 高斯快门曝光积分。</p>
-            <div class="tile-meta">扩展 Karplus-Strong 物理建模古琴配乐</div>
-          </div>
+        <div class="domain-card">
+          <span class="card-domain-badge">Domain B</span>
+          <h3 class="card-domain-title">电影三维视效</h3>
+          <p class="card-domain-desc">Three.js PBR 物理着色器、深度排序画家算法、双动态冷暖光源与 Bloom 辉光。</p>
+          <div class="card-domain-footer">电影级 Cinematic Hit 与次低频冲击</div>
+        </div>
 
-          <div class="domain-tile">
-            <span class="tile-tag">Domain B</span>
-            <h3 class="tile-title">电影三维视效</h3>
-            <p class="tile-desc">Three.js PBR 物理着色器、深度排序画家算法、双动态冷暖光源与 Bloom 辉光。</p>
-            <div class="tile-meta">电影级 Cinematic Hit 与次低频冲击</div>
-          </div>
+        <div class="domain-card">
+          <span class="card-domain-badge">Domain A</span>
+          <h3 class="card-domain-title">商业科技排版</h3>
+          <p class="card-domain-desc">瑞士极简设计网格、二阶阻尼物理弹簧（Spring Dynamics）、微观拟态与零闪烁字型。</p>
+          <div class="card-domain-footer">现代 Sub Drop 与极简 UI 瞬态音</div>
+        </div>
 
-          <div class="domain-tile">
-            <span class="tile-tag">Domain A</span>
-            <h3 class="tile-title">商业科技排版</h3>
-            <p class="tile-desc">瑞士极简设计网格、二阶阻尼物理弹簧（Spring Dynamics）、微观拟态与零闪烁字型。</p>
-            <div class="tile-meta">现代 Sub Drop 与极简 UI 瞬态音</div>
-          </div>
+        <div class="domain-card">
+          <span class="card-domain-badge">Domain C</span>
+          <h3 class="card-domain-title">科学数据可视</h3>
+          <p class="card-domain-desc">参数化函数图表、连续几何拓扑变换、动态折线增长与自适应数据滚轮。</p>
+          <div class="card-domain-footer">毫秒脉冲晶体音与微弦振</div>
+        </div>
 
-          <div class="domain-tile">
-            <span class="tile-tag">Domain C</span>
-            <h3 class="tile-title">科学数据可视</h3>
-            <p class="tile-desc">参数化函数图表、连续几何拓扑变换、动态折线增长与自适应数据滚轮。</p>
-            <div class="tile-meta">毫秒脉冲晶体音与微弦振</div>
-          </div>
-
-          <div class="domain-tile">
-            <span class="tile-tag">Domain E</span>
-            <h3 class="tile-title">音乐节拍叙事</h3>
-            <p class="tile-desc">多轨时序清单绑定、镜头蒙太奇卡点强切、情绪张力起伏节奏编排。</p>
-            <div class="tile-meta">全域时序对齐清单锁帧</div>
-          </div>
+        <div class="domain-card">
+          <span class="card-domain-badge">Domain E</span>
+          <h3 class="card-domain-title">音乐节拍叙事</h3>
+          <p class="card-domain-desc">多轨时序清单绑定、镜头蒙太奇卡点强切、情绪张力起伏节奏编排。</p>
+          <div class="card-domain-footer">全域时序对齐清单锁帧</div>
         </div>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <!-- Director Studio & Pipeline Runner (Apple Dark Tile 2) -->
-    <section id="director" class="section-director">
-      <div class="section-wrapper">
-        <div class="section-intro">
-          <p class="section-eyebrow-accent">Agent 导演中枢</p>
-          <h2 class="section-headline-dark">实时流水线与资产。<br>触手可及。</h2>
-          <p class="section-description-dark">采用内存 Buffer 直推 FFmpeg stdin 管道，全程零磁盘临时图片。随时查看产物、重跑流水线或监听实时日志。</p>
+  <!-- 7. TILE 5: DIRECTOR STUDIO (Near-Black Tile 2 #2a2a2c) -->
+  <section id="studio" class="tile-dark-2">
+    <div class="tile-content">
+      <div class="tile-header-block">
+        <p class="tile-eyebrow-accent">Agent 导演中枢</p>
+        <h2 class="tile-headline-dark">实时流水线与资产。<br>触手可及。</h2>
+        <p class="tile-lead-dark">采用内存 Buffer 直推 FFmpeg stdin 管道，全程零磁盘临时图片。随时查看产物、重跑流水线或监听实时日志。</p>
+      </div>
+
+      <div class="apple-studio-columns">
+        <!-- Left: Assets List -->
+        <div class="studio-sub-card">
+          <h3 class="sub-card-title">交付产物资产清单 (Deliverables)</h3>
+          <div id="artifacts-list" class="apple-artifact-table">
+            <!-- 动态载入 -->
+          </div>
         </div>
 
-        <div class="director-grid">
-          <!-- Left: Assets Download Box -->
-          <div class="director-box">
-            <h3 class="box-title">交付产物资产清单 (Deliverables)</h3>
-            <div id="artifacts-list" class="apple-artifacts-list">
-              <!-- 动态拉取 -->
-            </div>
+        <!-- Right: Real-time Terminal Log -->
+        <div class="studio-sub-card">
+          <div class="sub-card-header">
+            <h3 class="sub-card-title">实时渲染日志流 (Live Stream)</h3>
+            <button id="btn-clear-logs" class="apple-action-link">清空</button>
           </div>
-
-          <!-- Right: Live Pipeline Terminal -->
-          <div class="director-box">
-            <div class="box-header">
-              <h3 class="box-title">实时渲染日志流 (Live Stream)</h3>
-              <button id="btn-clear-logs" class="btn-link">清空</button>
-            </div>
-            <div id="terminal-logs" class="apple-terminal">
-              <div class="term-line">[Ready] Blockbuster Studio 生产工作台已就绪</div>
-              <div class="term-line">[Engine] 纯函数 seek(t) 架构 · 零墙钟依赖 · 内存流式推流</div>
-            </div>
-            <div class="terminal-actions">
-              <button id="btn-run-render-bottom" class="btn-pill-primary">一键重跑全量流水线</button>
-            </div>
+          <div id="terminal-logs" class="apple-terminal-box">
+            <div class="term-line">[Ready] Blockbuster Studio 生产工作台已就绪</div>
+            <div class="term-line">[Engine] 纯函数 seek(t) 架构 · 零墙钟依赖 · 内存流式推流</div>
+          </div>
+          <div class="studio-action-row">
+            <button id="btn-run-render-bottom" class="apple-btn-primary">一键重跑全量流水线</button>
           </div>
         </div>
       </div>
-    </section>
-  </main>
+    </div>
+  </section>
 
-  <!-- Apple Minimalist Footer -->
+  <!-- 8. Apple Signature Footer (#f5f5f7) -->
   <footer class="apple-footer">
-    <div class="footer-content">
-      <div class="footer-legal">
-        <p>Copyright © 2026 Blockbuster. 保留所有权利。本项目采用确定性代码逐帧渲染，不包含任何外部生成像素。</p>
-        <p>分支：<code>arena/01a0f07e-blockbuster</code> · 提交：<code id="footer-commit">c37d85e</code> · 协议：<a href="https://github.com/sunccchengze/Blockbuster/blob/main/skills/blockbuster/SKILL.md" target="_blank">Blockbuster Director Skill v3.1</a></p>
+    <div class="footer-container">
+      <div class="footer-directory">
+        <div class="footer-col">
+          <h4 class="footer-col-title">成片资源</h4>
+          <ul class="footer-link-list">
+            <li><a href="/video/code3d-v3.mp4" download>V3「墨」旗舰成片 (MP4)</a></li>
+            <li><a href="/video/code3d-v3-score.wav" download>v3.1 物理建模配乐母带 (WAV)</a></li>
+            <li><a href="/video/contact-sheet-v3.png" download>九宫格印相质检单 (PNG)</a></li>
+            <li><a href="/video/score-spectrogram.png" download>声学频谱瀑布图 (PNG)</a></li>
+            <li><a href="/video/code3d-v2.mp4" download>V2 金属 PBR 进阶版 (MP4)</a></li>
+            <li><a href="/video/code3d-v1.mp4" download>V1 路线验证版 (MP4)</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4 class="footer-col-title">导演协议</h4>
+          <ul class="footer-link-list">
+            <li><a href="https://github.com/sunccchengze/Blockbuster/blob/main/skills/blockbuster/SKILL.md" target="_blank">Phase 1: 需求意图问询</a></li>
+            <li><a href="https://github.com/sunccchengze/Blockbuster/blob/main/skills/blockbuster/SKILL.md" target="_blank">Phase 2: 视听分镜清单</a></li>
+            <li><a href="https://github.com/sunccchengze/Blockbuster/blob/main/skills/blockbuster/SKILL.md" target="_blank">Phase 3: 确定性纯函数</a></li>
+            <li><a href="https://github.com/sunccchengze/Blockbuster/blob/main/skills/blockbuster/SKILL.md" target="_blank">Phase 4: 180° 快门积分</a></li>
+            <li><a href="https://github.com/sunccchengze/Blockbuster/blob/main/skills/blockbuster/SKILL.md" target="_blank">Phase 5: 物理建模声学</a></li>
+            <li><a href="https://github.com/sunccchengze/Blockbuster/blob/main/skills/blockbuster/SKILL.md" target="_blank">Phase 6: 零磁盘流式编码</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4 class="footer-col-title">技术规格</h4>
+          <ul class="footer-link-list">
+            <li><span>1280×720 · 24fps 电影帧率</span></li>
+            <li><span>180° 高斯衰减快门超采样</span></li>
+            <li><span>-14.0 ± 1.0 LUFS 积分响度</span></li>
+            <li><span>≤ -1.0 dBTP 真实峰值</span></li>
+            <li><span>Skia C++ Buffer 内存流推流</span></li>
+            <li><span>Mulberry32 种子伪随机数</span></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4 class="footer-col-title">工程资产</h4>
+          <ul class="footer-link-list">
+            <li><a href="https://github.com/sunccchengze/Blockbuster/blob/main/DEVLOG.md" target="_blank">DEVLOG 开发实录</a></li>
+            <li><a href="https://github.com/sunccchengze/Blockbuster/blob/main/MEMORY.md" target="_blank">MEMORY 系统长效记忆</a></li>
+            <li><a href="https://github.com/sunccchengze/Blockbuster/blob/main/HANDOFF.md" target="_blank">HANDOFF 交接清单</a></li>
+            <li><a href="https://github.com/sunccchengze/Blockbuster" target="_blank">GitHub 官方仓库</a></li>
+            <li><a href="https://github.com/VoltAgent/awesome-design-md" target="_blank">Apple DESIGN.md 规范</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-legal-bar">
+        <p>Copyright © 2026 Blockbuster. 保留所有权利。本项目每一段像素均由确定性场景代码现场求值渲染，没有任何外部生成的视频素材。</p>
+        <p>工作分支：<code>arena/01a0f07e-blockbuster</code> · 提交哈希：<code id="footer-commit">edb9261</code></p>
       </div>
     </div>
   </footer>
 
-  <!-- Lightbox Modal for Inspection -->
+  <!-- Lightbox Modal -->
   <div id="image-modal" class="modal hidden">
     <div class="modal-backdrop"></div>
     <div class="modal-dialog">
