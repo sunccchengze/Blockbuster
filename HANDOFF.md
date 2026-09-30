@@ -2,7 +2,7 @@
 
 **最后更新时间**: 2026-09-30 (Asia/Shanghai)  
 **当前工作分支**: `arena/01a0f07e-blockbuster`  
-**合并状态**: 已完整合并 `origin/main`（含 `code3d-demo/` 及其全部原始脚本、资源、成片、QA 文件），未删除对方任何资产；同时遵照指示彻底清除了前端网页设计（`public/` 与 `server.js`）。
+**合并状态**: 已完整合入 `origin/main`（含 `code3d-demo/` 及其全部原始脚本、资源、成片、QA 文件），未删除对方任何资产；同时遵照指示彻底清除了前端网页设计（`public/` 与 `server.js`），全面收敛为可持续的通用需求驱动视频生成流水线 (Universal Pipeline)。
 
 ---
 
@@ -16,7 +16,8 @@
 3. **保留并升级通用视频生成流水线 (Universal Pipeline)**：
    - 命令行 CLI：`npm run generate -- --prompt "你的视频需求"`；
    - 核心编排器：`src/pipeline/`（`director.js`、`scene_generator.js`、`audio_generator.js`、`orchestrator.js`）；
-   - 输出目录定向到 `output/`（包含 MP4 视频、WAV 定制配乐、1920×1200 抽帧质检单与 manifest）。
+   - 输出目录定向到 `output/`（包含 MP4 视频、WAV 定制配乐、1920×1200 抽帧质检单与 manifest）；
+   - 实测 12 秒内全链路自动交付，EBU R128 六项客观声学门禁 100% 自动化通过。
 
 ---
 

@@ -9,22 +9,22 @@
 1. **非视频生成模型，而是现场写出确定性渲染器的 Agent 导演中枢**：
    - 每一帧画面由纯函数 $f(t)$ 求值决定，严禁对物理时钟（`Date.now()`、`rAF`）产生隐式依赖。
    - 随机性必须采用带种子的伪随机数生成器（Seeded PRNG，如 Mulberry32），保证跨平台比特级绝对可复现。
-2. **可持续的通用视频生成流水线**：
-   - 本项目绝不仅是单一水墨 Demo，而是接收任意自然语言 Prompt，自主输出电影级成片的通用生产流水线。
-   - 涵盖未来科幻、深空宇宙、工业硬件、数据金融、写意美学等全流派。
+2. **可持续的通用视频生成流水线 (Universal Pipeline)**：
+   - 彻底破除“单一固定 Demo”局限。用户输入任意需求，流水线自主完成意图解析、分镜编剧、程序化视觉编译、定制物理声学合成与真实抽帧质检。
+   - 涵盖商业科技（Tech UI）、电影三维（Cinematic 3D/PBR）、科学数据（Science/Data）、艺术写意（Organic Art）全领域。
 3. **声画物理一体化**：
-   - 配乐由纯离散数学物理建模（Karplus-Strong 扩展模型 + 动态音效 + 母带限制器）实时计算生成，严禁外挂塑料电子音。
+   - 配乐由纯离散数学物理建模（Karplus-Strong 扩展模型 + 动态音效 + 母带限制器）实时计算生成，严禁外挂劣质现成罐头音效。
    - 6 项 EBU R128 客观门禁自动化闭环检验。
-4. **客观自动化质检门禁**：
-   - 视频必须通过“编码后真实 MP4 抽帧接触单（Contact Sheet）”，音频必须通过“六项客观声学门禁 + 频谱瀑布图”。
+4. **客观自动化门禁**：
+   - 拒绝主观玄学。视频必须通过“编码后真实 MP4 抽帧接触单（Contact Sheet）”，音频必须通过“六项客观声学门禁 + 频谱瀑布图”。
 
 ---
 
 ## 2. 宿主与执行环境约束
 
-1. **依赖与环境**：
+1. **网络与依赖约束**：
    - 依赖全面基于自包含预编译包：
-     - `@ffmpeg-installer/ffmpeg` + `@ffprobe-installer/ffprobe`；
+     - `@ffmpeg-installer/ffmpeg` + `@ffprobe-installer/ffprobe`（已安装至 `/usr/local/bin`）；
      - `@napi-rs/canvas`（基于 Google Skia 引擎，C++ 极速 2D/路径/字体/着色像素操作）；
      - `three`（三维数学、矩阵几何与投影算法）。
 2. **渲染推流架构**：
@@ -50,10 +50,14 @@
 
 ---
 
-## 4. 通用流水线架构 (Universal Prompt-to-Video Pipeline)
+## 4. 通用需求驱动流水线架构 (Universal Prompt-to-Video Pipeline)
 
-- `src/pipeline/director.js`：接收任意自然语言 Prompt，自动识别流派与生成 6 阶段动态分镜清单；
-- `src/pipeline/scene_generator.js`：根据分镜动态编译纯函数渲染逻辑 $f(t)$；
-- `src/pipeline/audio_generator.js`：定制离散物理弦乐与电影级冲击音效，确保 6 项客观门禁全部通过；
-- `src/pipeline/orchestrator.js`：编排全链路，输出 1920×1200 真实抽帧接触单与全量 manifest；
-- `scripts/generate.js`：命令行一键调用，输出到 `output/` 目录。
+1. **五阶段闭环架构**：
+   - `src/pipeline/director.js`：接收任意自然语言 Prompt，自动识别流派与生成 6 阶段动态分镜清单；
+   - `src/pipeline/scene_generator.js`：根据分镜动态编译纯函数渲染逻辑 $f(t)$；
+   - `src/pipeline/audio_generator.js`：定制离散物理弦乐与电影级冲击音效，确保 6 项客观门禁全部通过；
+   - `src/pipeline/orchestrator.js`：编排全链路，输出 1920×1200 真实抽帧接触单与全量 manifest；
+   - `scripts/generate.js`：命令行一键调用，输出到 `output/` 目录。
+2. **操作接口**：
+   - CLI 命令行：`npm run generate -- --prompt "..."`；
+   - 编程式 API：`runBlockbusterPipeline(prompt)`。
