@@ -2,16 +2,15 @@
 
 **最后更新时间**: 2026-09-30 (Asia/Shanghai)  
 **当前工作分支**: `arena/01a0f07e-blockbuster`  
-**最新远端提交**: `add90b9` (`origin/arena/01a0f07e-blockbuster`)  
-**关联 Pull Request**: [#1 feat: universal prompt-to-video production pipeline and blockbuster skill](https://github.com/sunccchengze/Blockbuster/pull/1)  
-**合并状态**: 已完整合入 `origin/main`（含 `code3d-demo/` 及其全部原始脚本、资源、成片、QA 文件），未删除对方任何资产；同时遵照指示彻底清除了前端网页设计（`public/` 与 `server.js`），全面收敛为可持续的通用需求驱动视频生成流水线 (Universal Pipeline)。
+**Pull Request 状态**: [PR #1](https://github.com/sunccchengze/Blockbuster/pull/1) 已成功合并入主干分支 `main`（Merge commit: `bb2216f`）  
+**当前工程状态**: 彻底破除单一固定 Demo 局限，全面实现**可持续通用的需求驱动视频生成流水线 (Universal Prompt-to-Video Pipeline)** 与通用 SKILL。已完整合入主干全部资产，清除前端 Web 代码，端到端 CLI 流水线就绪并经 6 项客观门禁实测验证。
 
 ---
 
 ## 一、本次迭代：双分支无损合并与流水线收敛
 
 1. **分支合并与资产保护**：
-   - 完整合入了 `origin/main` 上的所有内容：`code3d-demo/`（包含其 `assets/`、`qa/`、`vendor/`、`video/`、`render.mjs`、`audio.py`、`skills/blockbuster/` 原始分镜与规程）、`.gitattributes`、`浓差电池.zip` 等，原样保留，未删减任何一项；
+   - 完整合入了 `main` 上的所有内容：`code3d-demo/`（包含其 `assets/`、`qa/`、`vendor/`、`video/`、`render.mjs`、`audio.py`、`skills/blockbuster/` 原始分镜与规程）、`.gitattributes`、`浓差电池.zip` 等，原样保留，未删减任何一项；
 2. **清除不必要的前端设计**：
    - 彻底移除了 `public/` 静态目录与 `server.js` Web 服务；
    - 聚焦纯粹的工业级代码驱动视频生成流水线；
