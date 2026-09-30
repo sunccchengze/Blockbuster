@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node server.js",
+    "generate": "node scripts/generate.js",
     "render": "node scripts/render_all.js",
     "audio": "node src/audio/compose_v3.js",
     "test": "node -e 'require(\"./src/core/audio/qc\").evaluateAudioQuality(\"./video/code3d-v3-score.wav\")'"

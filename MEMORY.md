@@ -94,3 +94,20 @@
   - **单阴影绝对约束**：
     - 全站唯一合法的投影仅赋予沉浸式黑展台上的产品屏幕：`rgba(0, 0, 0, 0.22) 3px 5px 30px 0`；
     - 卡片、按钮、正文一律零 drop-shadow，以 1px hairline border 或底色对比界定空间。
+
+---
+
+## 6. 通用需求驱动流水线架构 (Universal Prompt-to-Video Pipeline)
+
+1. **可持续流水线核心原则**：
+   - 彻底破除“单片执念”：不仅是单一水墨 Demo，而是任意需求输入即可自主完成制作的可复用工业流水线；
+   - 模块化架构：
+     - `src/pipeline/director.js`：自然语言意图解构与类型学判定，生成 6 阶段动态分镜清单；
+     - `src/pipeline/scene_generator.js`：根据分镜动态编译纯函数渲染逻辑 $f(t)$；
+     - `src/pipeline/audio_generator.js`：定制离散物理弦乐与电影级冲击音效，确保 6 项客观门禁全部通过；
+     - `src/pipeline/orchestrator.js`：编排全链路，输出 1920×1200 真实抽帧接触单与全量 manifest。
+2. **多形态驱动接入**：
+   - 命令行：`npm run generate -- --prompt "..."`；
+   - Web 演播厅：`POST /api/pipeline/generate`，SSE 实时日志推流与动态回放；
+   - 编程式 API：`runBlockbusterPipeline(prompt)`。
+

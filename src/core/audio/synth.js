@@ -246,6 +246,19 @@ class AudioWorkstation {
       this.leftChannel[tailIdx] *= e;
       this.rightChannel[tailIdx] *= e;
     }
+
+    // 4. 精确消除微直流偏置 (Neutralize DC offset to < -80 dBFS)
+    let meanL = 0, meanR = 0;
+    for (let i = 0; i < this.totalSamples; i++) {
+      meanL += this.leftChannel[i];
+      meanR += this.rightChannel[i];
+    }
+    meanL /= this.totalSamples;
+    meanR /= this.totalSamples;
+    for (let i = 0; i < this.totalSamples; i++) {
+      this.leftChannel[i] -= meanL;
+      this.rightChannel[i] -= meanR;
+    }
   }
 
   exportWav(outputPath) {

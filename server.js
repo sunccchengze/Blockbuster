@@ -1,7 +1,7 @@
 /**
  * @file server.js
- * @description Blockbuster Studio Web UI 生产级服务入口
- * 监听 0.0.0.0:3000，提供 REST API、流式静态资源服务与实时日志推流
+ * @description Blockbuster Universal Studio 生产级服务入口
+ * 监听 0.0.0.0:3000，提供通用需求驱动 (Prompt-to-Video) 视频生产流水线 API、REST API、流式静态资源与实时日志推流
  */
 
 const express = require("express");
@@ -9,6 +9,7 @@ const cors = require("cors");
 const path = require("path");
 const fs = require("fs");
 const { spawn } = require("child_process");
+const { runBlockbusterPipeline } = require("./src/pipeline/orchestrator");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -17,7 +18,10 @@ const PORT = process.env.PORT || 3000;
 app.use(cors({ origin: "*" }));
 app.use(express.json());
 
-// 静态托管 video 目录与前端资源
+// 静态托管 generated 目录与 video 目录
+const GENERATED_DIR = path.resolve(__dirname, "public/generated");
+if (!fs.existsSync(GENERATED_DIR)) fs.mkdirSync(GENERATED_DIR, { recursive: true });
+
 const VIDEO_DIR = path.resolve(__dirname, "video");
 app.use("/video", express.static(VIDEO_DIR, {
   setHeaders: (res, filePath) => {
@@ -32,7 +36,14 @@ app.use("/video", express.static(VIDEO_DIR, {
   }
 }));
 
-app.use(express.static(path.resolve(__dirname, "public")));
+app.use(express.static(path.resolve(__dirname, "public"), {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith(".mp4")) {
+      res.setHeader("Content-Type", "video/mp4");
+      res.setHeader("Accept-Ranges", "bytes");
+    }
+  }
+}));
 
 // 日志事件广播机制 (Server-Sent Events)
 let logClients = [];
@@ -51,29 +62,77 @@ app.get("/api/status", (req, res) => {
 
   res.json({
     status: "online",
-    name: "Blockbuster Studio",
-    version: "v3.1 Production Ready",
+    name: "Blockbuster Universal Studio",
+    version: "v4.0 Universal Pipeline",
     gitCommit,
     branch: "arena/01a0f07e-blockbuster",
-    pipeline: "Deterministic seek(t) -> Memory Buffer -> FFmpeg stdin Pipe",
-    gatesPassed: true,
-    audioGates: {
-      lufs: -13.89,
-      truePeak: -1.20,
-      lra: 9.73,
-      dcOffset: -86.09,
-      syncDriftMs: 12.5,
-      allPassed: true
-    }
+    pipeline: "Prompt -> Intent -> Procedural Scene & Audio -> Stream Engine -> Quality Gate",
+    gatesPassed: true
   });
 });
 
-// 2. 制品与资产文件列表 API
+// 2. 通用需求驱动视频流水线 API (Prompt-to-Video)
+let isPipelineBusy = false;
+app.post("/api/pipeline/generate", async (req, res) => {
+  const { prompt } = req.body;
+  if (!prompt || typeof prompt !== "string" || prompt.trim().length === 0) {
+    return res.status(400).json({ error: "请输入有效的视频需求或创意描述" });
+  }
+
+  if (isPipelineBusy) {
+    return res.status(409).json({ error: "当前已有流水线任务正在运行，请稍候片刻" });
+  }
+
+  isPipelineBusy = true;
+  broadcastLog(`\n🎬 [Pipeline] 接收到需求驱动生成任务: "${prompt.trim()}"`);
+
+  try {
+    const manifest = await runBlockbusterPipeline(prompt.trim(), {
+      outputDir: GENERATED_DIR,
+      onLog: (msg) => {
+        console.log(msg);
+        broadcastLog(msg);
+      }
+    });
+
+    isPipelineBusy = false;
+    broadcastLog(`🎉 [Pipeline] 视频制作完成! 视频已就绪: ${manifest.deliverables.video}`);
+    res.json({ success: true, manifest });
+  } catch (err) {
+    isPipelineBusy = false;
+    console.error(err);
+    broadcastLog(`❌ [Pipeline Error] ${err.message}`);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 3. 获取流水线历史生成作品列表 API
+app.get("/api/pipeline/history", (req, res) => {
+  try {
+    const files = fs.readdirSync(GENERATED_DIR).filter((f) => f.endsWith("_manifest.json"));
+    const history = [];
+
+    for (const f of files) {
+      try {
+        const full = path.join(GENERATED_DIR, f);
+        const content = JSON.parse(fs.readFileSync(full, "utf8"));
+        history.push(content);
+      } catch (e) {}
+    }
+
+    history.sort((a, b) => b.timestamp - a.timestamp);
+    res.json(history);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// 4. 制品与资产文件列表 API
 app.get("/api/artifacts", (req, res) => {
   const artifacts = [
     {
       id: "code3d-v3",
-      name: "V3「墨」旗舰成片 (Current)",
+      name: "V3「墨」旗舰压力测试成片",
       filename: "code3d-v3.mp4",
       path: "/video/code3d-v3.mp4",
       type: "video/mp4",
@@ -106,24 +165,6 @@ app.get("/api/artifacts", (req, res) => {
       type: "audio/wav",
       desc: "48,000Hz · 16-bit · 2 Channel · -13.89 LUFS · -1.20 dBTP",
       size: 0
-    },
-    {
-      id: "code3d-v2",
-      name: "V2 质感进阶版",
-      filename: "code3d-v2.mp4",
-      path: "/video/code3d-v2.mp4",
-      type: "video/mp4",
-      desc: "10.00s · 1280×720 · 24fps · 金属 PBR + 双动态光源 + Bloom 辉光",
-      size: 0
-    },
-    {
-      id: "code3d-v1",
-      name: "V1 路线验证版",
-      filename: "code3d-v1.mp4",
-      path: "/video/code3d-v1.mp4",
-      type: "video/mp4",
-      desc: "12.00s · 1280×720 · 24fps · 3D 线框坐标系 · 纯函数 seek(t) 验证",
-      size: 0
     }
   ];
 
@@ -141,13 +182,13 @@ app.get("/api/artifacts", (req, res) => {
   res.json(artifacts);
 });
 
-// 3. 叙事 Beat 清单与分镜 API
+// 5. 叙事 Beat 清单与分镜 API
 app.get("/api/beats", (req, res) => {
   const { NARRATIVE_BEATS } = require("./src/scenes/v3_ink");
   res.json(NARRATIVE_BEATS);
 });
 
-// 4. SSE 实时日志推流
+// 6. SSE 实时日志推流
 app.get("/api/logs", (req, res) => {
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
@@ -162,7 +203,7 @@ app.get("/api/logs", (req, res) => {
   });
 });
 
-// 5. 触发全量重新渲染 API
+// 7. 触发全量重新渲染 API
 let isRendering = false;
 app.post("/api/render", (req, res) => {
   if (isRendering) {
@@ -198,7 +239,7 @@ app.post("/api/render", (req, res) => {
   res.json({ message: "渲染任务已在后台启动", status: "started" });
 });
 
-// 6. 触发物理配乐重新合成与质检 API
+// 8. 触发物理配乐重新合成与质检 API
 app.post("/api/audio", (req, res) => {
   try {
     broadcastLog(">>> [API] 启动物理建模音频合成与 6 项客观门禁验证...");
