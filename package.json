@@ -1,0 +1,28 @@
+{
+  "name": "blockbuster",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sunccchengze/Blockbuster.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/sunccchengze/Blockbuster/issues"
+  },
+  "homepage": "https://github.com/sunccchengze/Blockbuster#readme",
+  "dependencies": {
+    "@ffmpeg-installer/ffmpeg": "^1.1.0",
+    "@ffmpeg-installer/linux-x64": "^4.1.0",
+    "@ffprobe-installer/ffprobe": "^2.1.2",
+    "@ffprobe-installer/linux-x64": "^5.2.0",
+    "@napi-rs/canvas": "^1.0.9",
+    "three": "^0.186.1"
+  }
+}
