@@ -2,6 +2,7 @@
 
 **最后更新时间**: 2026-09-30 (Asia/Shanghai)  
 **当前工作分支**: `arena/01a0f07e-blockbuster`  
+**最新远端提交**: `2f57247` (`origin/arena/01a0f07e-blockbuster`)  
 **Pull Request 状态**: [PR #1](https://github.com/sunccchengze/Blockbuster/pull/1) 已成功合并入主干分支 `main`（Merge commit: `bb2216f`）  
 **当前工程状态**: 彻底破除单一固定 Demo 局限，全面实现**可持续通用的需求驱动视频生成流水线 (Universal Prompt-to-Video Pipeline)** 与通用 SKILL。已完整合入主干全部资产，清除前端 Web 代码，端到端 CLI 流水线就绪并经 6 项客观门禁实测验证。
 
