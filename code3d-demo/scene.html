@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="utf-8">
+<title>code3d — f(t) → frames → mp4</title>
+<style>
+  html, body {
+    margin: 0; padding: 0; width: 1280px; height: 720px;
+    overflow: hidden; background: #05070f;
+  }
+  #c { display: block; width: 1280px; height: 720px; }
+
+  /* 全部覆盖层都是 t 的纯函数，由 seek(t) 写入 style，没有 CSS transition */
+  .ov { position: fixed; pointer-events: none; }
+
+  #vig {
+    inset: 0;
+    background: radial-gradient(ellipse 80% 80% at 50% 47%,
+      rgba(0,0,0,0) 40%, rgba(0,0,0,.42) 78%, rgba(0,0,0,.72) 100%);
+  }
+  #flash { inset: 0; background: #cfe9ff; opacity: 0; mix-blend-mode: screen; }
+
+  /* 四角取景框 */
+  .brk { width: 26px; height: 26px; border: 0 solid rgba(180,215,255,.45); }
+  #b1 { top: 22px;    left: 22px;    border-top-width: 2px;    border-left-width: 2px; }
+  #b2 { top: 22px;    right: 22px;   border-top-width: 2px;    border-right-width: 2px; }
+  #b3 { bottom: 62px; left: 22px;    border-bottom-width: 2px; border-left-width: 2px; }
+  #b4 { bottom: 62px; right: 22px;   border-bottom-width: 2px; border-right-width: 2px; }
+
+  #tag {
+    top: 26px; left: 60px;
+    font: 500 13px/1 'DejaVu Sans Mono', monospace;
+    letter-spacing: .14em; color: rgba(174,208,255,.5);
+  }
+  #rec {
+    top: 26px; right: 60px;
+    font: 500 13px/1 'DejaVu Sans Mono', monospace;
+    letter-spacing: .14em; color: rgba(255,120,120,.75);
+  }
+  #rec i {
+    display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    background: #ff5a5a; margin-right: 7px; vertical-align: 0;
+  }
+
+  #hud {
+    left: 60px; right: 60px; bottom: 26px;
+    font: 500 13px/1.5 'DejaVu Sans Mono', monospace;
+    color: rgba(190,215,255,.62); letter-spacing: .05em;
+  }
+  #hud .row { display: flex; justify-content: space-between; align-items: baseline; }
+  #hud .tc { font-size: 15px; color: rgba(226,240,255,.92); letter-spacing: .08em; }
+  #bar {
+    margin-top: 9px; height: 2px; width: 100%;
+    background: rgba(150,185,235,.16); overflow: hidden;
+  }
+  #barfill { display: block; height: 100%; width: 0%; background: #22d3ee; }
+</style>
+<script type="importmap">
+  { "imports": { "three": "/vendor/three.module.js" } }
+</script>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div class="ov" id="vig"></div>
+<div class="ov" id="flash"></div>
+<div class="ov brk" id="b1"></div>
+<div class="ov brk" id="b2"></div>
+<div class="ov brk" id="b3"></div>
+<div class="ov brk" id="b4"></div>
+<div class="ov" id="tag">code3d · scene.html · window.seek(t)</div>
+<div class="ov" id="rec"><i></i>CAPTURING</div>
+<div class="ov" id="hud">
+  <div class="row">
+    <span class="tc" id="tc">t = 0.000 s</span>
+    <span id="fr">frame 000 / 360</span>
+    <span>1280×720 · 30 fps · SwiftShader (software WebGL)</span>
+  </div>
+  <div id="bar"><i id="barfill"></i></div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+
+/* ══════════════════════════════════════════════════════════════
+   契约：window.DURATION + async window.seek(t)
+   每个像素都是 t 的纯函数。没有 Date.now / rAF / timer / 未播种随机数。
+   ══════════════════════════════════════════════════════════════ */
+
+const W = 1280, H = 720, FPS = 30, DUR = 12.0;
+window.DURATION = DUR;
+window.FPS = FPS;
+
+/* ── 数学工具 ─────────────────────────────────────────────── */
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const norm  = (t, a, b) => clamp((t - a) / (b - a));
+const smoothstep = (a, b, t) => { const x = norm(t, a, b); return x * x * (3 - 2 * x); };
+const easeOut      = x => 1 - Math.pow(1 - x, 3);
+const easeOutBack  = x => { const c1 = 1.70158, c3 = c1 + 1;
+                            return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const easeInOutSin = x => -(Math.cos(Math.PI * x) - 1) / 2;
+
+/* seeded PRNG — 确定性粒子场 */
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/* ── 调色板 ───────────────────────────────────────────────── */
+const C = {
+  bg:     0x05070f,
+  cyan:   '#22d3ee',
+  violet: '#a78bfa',
+  amber:  '#fbbf24',
+  text:   '#e8eefc',
+};
+
+/* ══════════════════════════════════════════════════════════════
+   运镜：路径 + 时间→进度 的分段映射
+   ══════════════════════════════════════════════════════════════ */
+const camPath = new THREE.CatmullRomCurve3([
+  new THREE.Vector3( 0.0, 1.00, 13.0),
+  new THREE.Vector3( 0.0, 1.15,  8.2),
+  new THREE.Vector3( 2.6, 1.50,  5.2),
+  new THREE.Vector3( 5.2, 2.20,  1.2),
+  new THREE.Vector3( 4.4, 3.40, -3.4),
+  new THREE.Vector3( 0.0, 6.20, -8.0),
+  new THREE.Vector3( 3.6, 3.20, -4.6),   // 从右侧绕行，不穿过主体
+  new THREE.Vector3( 4.2, 1.70,  3.4),
+  new THREE.Vector3( 0.0, 1.50,  4.9),
+], false, 'catmullrom', 0.5);
+
+const lookPath = new THREE.CatmullRomCurve3([
+  new THREE.Vector3(0, 1.20,  2.0),
+  new THREE.Vector3(0, 1.30,  0.0),
+  new THREE.Vector3(0, 1.35,  0.0),
+  new THREE.Vector3(0, 1.40, -0.5),
+  new THREE.Vector3(0, 1.30, -1.0),
+  new THREE.Vector3(0, 0.60,  0.0),
+  new THREE.Vector3(0, 1.20,  0.0),
+  new THREE.Vector3(0, 1.45,  0.0),
+  new THREE.Vector3(0, 1.45,  0.0),
+], false, 'catmullrom', 0.5);
+
+/* 每个 beat 处进度导数归零 → 镜头"落定" */
+const UKEYS = [[0, 0.00], [3, 0.20], [6, 0.50], [9, 0.75], [12, 1.00]];
+function uAt(t) {
+  for (let i = 0; i < UKEYS.length - 1; i++) {
+    const [t0, u0] = UKEYS[i], [t1, u1] = UKEYS[i + 1];
+    if (t <= t1) { const x = norm(t, t0, t1); return u0 + (u1 - u0) * (x * x * (3 - 2 * x)); }
+  }
+  return 1;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   字卡
+   ══════════════════════════════════════════════════════════════ */
+const CARDS = [
+  { t0: 0.4, t1: 3.0, title: 'f(t)',               sub: '每一帧都是时间 t 的纯函数',       accent: C.cyan,    ox: -0.55, oy:  0.30, roll: -1 },
+  { t0: 3.2, t1: 6.0, title: 'three.js + WebGL',   sub: '几何、材质、光照、镜头，全是代码', accent: C.violet,  ox: -1.05, oy: -0.80, roll:  1 },
+  { t0: 6.2, t1: 9.0, title: '360 frames @ 30fps', sub: '无头浏览器逐帧 seek(t) → 截图',   accent: C.amber,   ox:  1.05, oy: -0.70, roll: -1 },
+  { t0: 9.2, t1: 12.0, title: 'ffmpeg → MP4',      sub: '帧序列 + 代码合成的音轨',          accent: '#8fe3ff', ox:  0.00, oy:  0.00, roll:  0 },
+];
+const CARD_Z = -5.4, CARD_W = 4.05, CARD_H = CARD_W * (320 / 1024);
+
+function makeCardTexture(title, sub, accent) {
+  const cw = 1024, ch = 320;
+  const cv = document.createElement('canvas'); cv.width = cw; cv.height = ch;
+  const g = cv.getContext('2d');
+  g.clearRect(0, 0, cw, ch);
+
+  const pad = 44, r = 22;
+  // 面板底
+  g.beginPath();
+  g.roundRect(pad, pad, cw - pad * 2, ch - pad * 2, r);
+  g.fillStyle = 'rgba(6,10,22,0.66)'; g.fill();
+  g.lineWidth = 3; g.strokeStyle = accent + '99'; g.stroke();
+
+  // 左侧强调条
+  g.beginPath(); g.roundRect(pad + 26, pad + 46, 7, ch - pad * 2 - 92, 4);
+  g.fillStyle = accent; g.shadowColor = accent; g.shadowBlur = 26; g.fill();
+  g.shadowBlur = 0;
+
+  const tx = pad + 62;
+  // 标题
+  g.font = '700 92px "Noto Sans CJK SC", "DejaVu Sans", sans-serif';
+  g.textBaseline = 'alphabetic';
+  g.shadowColor = accent; g.shadowBlur = 34;
+  g.fillStyle = C.text; g.fillText(title, tx, pad + 122);
+  g.shadowBlur = 0;
+  g.fillStyle = C.text; g.fillText(title, tx, pad + 122);
+
+  // 副标题
+  g.font = '400 40px "Noto Sans CJK SC", "DejaVu Sans", sans-serif';
+  g.fillStyle = 'rgba(206,224,250,0.80)';
+  g.fillText(sub, tx, pad + 196);
+
+  const t = new THREE.CanvasTexture(cv);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 8;
+  t.needsUpdate = true;
+  return t;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   程序化环境贴图 —— 让金属真的像金属
+   ══════════════════════════════════════════════════════════════ */
+function makeEnvTexture() {
+  const cv = document.createElement('canvas'); cv.width = 512; cv.height = 256;
+  const g = cv.getContext('2d');
+  const grad = g.createLinearGradient(0, 0, 0, 256);
+  grad.addColorStop(0.00, '#0b1026');
+  grad.addColorStop(0.42, '#1c2450');
+  grad.addColorStop(0.50, '#3b2f6d');
+  grad.addColorStop(0.56, '#0a0d1c');
+  grad.addColorStop(1.00, '#04060d');
+  g.fillStyle = grad; g.fillRect(0, 0, 512, 256);
+
+  const blob = (x, y, r, col) => {
+    const rg = g.createRadialGradient(x, y, 0, x, y, r);
+    rg.addColorStop(0, col); rg.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = rg; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
+  };
+  blob(118, 66, 96,  'rgba(126,224,255,0.95)');  // 青，主光
+  blob(392, 88, 116, 'rgba(190,142,255,0.85)');  // 紫，轮廓光
+  blob(262, 178, 74, 'rgba(255,192,112,0.45)');  // 琥珀，底反弹
+
+  const t = new THREE.CanvasTexture(cv);
+  t.mapping = THREE.EquirectangularReflectionMapping;
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+function makeGlowTexture(inner, outer) {
+  const cv = document.createElement('canvas'); cv.width = cv.height = 256;
+  const g = cv.getContext('2d');
+  const rg = g.createRadialGradient(128, 128, 0, 128, 128, 128);
+  rg.addColorStop(0.00, inner);
+  rg.addColorStop(0.28, outer);
+  rg.addColorStop(1.00, 'rgba(0,0,0,0)');
+  g.fillStyle = rg; g.fillRect(0, 0, 256, 256);
+  const t = new THREE.CanvasTexture(cv);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   init
+   ══════════════════════════════════════════════════════════════ */
+let renderer, scene, camera, knot, core, glow, glow2, grid, gridU, particles, cards = [];
+const P = { n: 1100, pos: [], phase: [], speed: [], scale: [], dummy: new THREE.Object3D() };
+
+function init() {
+  renderer = new THREE.WebGLRenderer({
+    canvas: document.getElementById('c'),
+    antialias: true, alpha: false, preserveDrawingBuffer: true,
+  });
+  renderer.setPixelRatio(1);
+  renderer.setSize(W, H, false);
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.10;
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(C.bg);
+  scene.fog = new THREE.FogExp2(C.bg, 0.030);
+
+  camera = new THREE.PerspectiveCamera(42, W / H, 0.1, 220);
+
+  /* 环境贴图 → 金属反射 */
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  pmrem.compileEquirectangularShader();
+  scene.environment = pmrem.fromEquirectangular(makeEnvTexture()).texture;
+
+  /* 灯光（无阴影贴图 —— 软件渲染下太贵） */
+  scene.add(new THREE.HemisphereLight(0x8fb6ff, 0x0a0d18, 0.55));
+  const key = new THREE.PointLight(0x8ce8ff, 42, 40, 2); key.position.set(-5.5, 5.0, 4.5); scene.add(key);
+  const rim = new THREE.PointLight(0xb98cff, 38, 40, 2); rim.position.set( 6.0, 3.2, -4.0); scene.add(rim);
+  const fil = new THREE.PointLight(0xffc46b, 16, 30, 2); fil.position.set( 0.0, -1.6, 5.0); scene.add(fil);
+
+  /* ── 主体：镀铬环面结 ── */
+  knot = new THREE.Mesh(
+    new THREE.TorusKnotGeometry(1.15, 0.335, 190, 30),
+    new THREE.MeshPhysicalMaterial({
+      color: 0x9db6dd, metalness: 1.0, roughness: 0.165,
+      clearcoat: 1.0, clearcoatRoughness: 0.09, envMapIntensity: 1.55,
+    })
+  );
+  knot.position.set(0, 1.35, 0);
+  scene.add(knot);
+
+  /* 内核 + 假辉光（additive sprite，比后处理便宜得多） */
+  core = new THREE.Mesh(
+    new THREE.IcosahedronGeometry(0.22, 2),
+    new THREE.MeshBasicMaterial({ color: 0x2fd0ee })
+  );
+  core.position.copy(knot.position);
+  scene.add(core);
+
+  glow = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: makeGlowTexture('rgba(150,235,255,0.85)', 'rgba(70,150,255,0.30)'),
+    blending: THREE.AdditiveBlending, transparent: true, depthWrite: false, opacity: 0.0,
+  }));
+  glow.position.copy(knot.position); glow.scale.setScalar(9); scene.add(glow);
+
+  glow2 = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: makeGlowTexture('rgba(200,160,255,0.55)', 'rgba(120,80,220,0.18)'),
+    blending: THREE.AdditiveBlending, transparent: true, depthWrite: false, opacity: 0.0,
+  }));
+  glow2.position.copy(knot.position); glow2.scale.setScalar(17); scene.add(glow2);
+
+  /* ── 网格地面（自定义 shader，带向外扩散的 reveal + 脉冲环）── */
+  gridU = {
+    uTime:    { value: 0 },
+    uReveal:  { value: 0 },
+    uOpacity: { value: 1 },
+    uColorA:  { value: new THREE.Color(0x1d4f6b) },
+    uColorB:  { value: new THREE.Color(0x22d3ee) },
+  };
+  grid = new THREE.Mesh(
+    new THREE.PlaneGeometry(160, 160, 1, 1),
+    new THREE.ShaderMaterial({
+      uniforms: gridU, transparent: true, depthWrite: false, side: THREE.DoubleSide,
+      vertexShader: /* glsl */`
+        varying vec3 vW;
+        void main() {
+          vec4 wp = modelMatrix * vec4(position, 1.0);
+          vW = wp.xyz;
+          gl_Position = projectionMatrix * viewMatrix * wp;
+        }`,
+      fragmentShader: /* glsl */`
+        uniform float uTime, uReveal, uOpacity;
+        uniform vec3  uColorA, uColorB;
+        varying vec3  vW;
+        void main() {
+          vec2 p = vW.xz;
+          float d = length(p);
+
+          float lw = 0.017 + d * 0.0038;                 // 线宽随距离增长，伪抗锯齿
+
+          vec2 g1 = abs(fract(p) - 0.5);                  // 1 单位细网格
+          float line1 = 1.0 - smoothstep(0.0, lw, min(g1.x, g1.y));
+
+          vec2 g5 = abs(fract(p / 5.0) - 0.5) * 5.0;      // 5 单位主线
+          float line5 = 1.0 - smoothstep(0.0, lw * 1.7, min(g5.x, g5.y));
+
+          float reveal = 1.0 - smoothstep(uReveal * 27.0 - 7.0, uReveal * 27.0, d);
+          float ring   = exp(-pow((d - uTime * 7.5) / 1.15, 2.0)) * 0.6;
+          float fade   = exp(-d * 0.070);
+
+          vec3 col = mix(uColorA, uColorB, clamp(line5 + ring, 0.0, 1.0));
+          float a = (line1 * 0.34 + line5 * 0.52 + ring) * reveal * fade * uOpacity;
+          if (a < 0.002) discard;
+
+          gl_FragColor = vec4(col * (0.75 + ring * 1.3), a);
+          #include <tonemapping_fragment>
+          #include <colorspace_fragment>
+        }`,
+    })
+  );
+  grid.rotation.x = -Math.PI / 2;
+  grid.position.y = 0;
+  scene.add(grid);
+
+  /* ── 实例化粒子场：螺旋分布 ── */
+  const rand = mulberry32(20260922);
+  const geo = new THREE.OctahedronGeometry(0.052, 0);
+  const mat = new THREE.MeshStandardMaterial({
+    color: 0x9dc0ff, metalness: 0.92, roughness: 0.30,
+    emissive: 0x1b3f74, emissiveIntensity: 0.7, envMapIntensity: 1.2,
+    transparent: true, opacity: 1.0,
+  });
+  particles = new THREE.InstancedMesh(geo, mat, P.n);
+  particles.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  for (let i = 0; i < P.n; i++) {
+    const r = 2.3 + 9.5 * Math.pow(rand(), 0.62);
+    const th = r * 0.52 + rand() * 1.1;
+    P.pos.push(new THREE.Vector3(
+      Math.cos(th) * r,
+      0.35 + (rand() - 0.5) * (0.5 + 2.0 * Math.exp(-r / 5.0)) + rand() * 0.9,
+      Math.sin(th) * r
+    ));
+    P.phase.push(rand() * Math.PI * 2);
+    P.speed.push(0.35 + rand() * 1.05);
+    P.scale.push(0.40 + rand() * 1.00);
+  }
+  scene.add(particles);
+
+  /* ── 字卡 ── */
+  for (const c of CARDS) {
+    const m = new THREE.Mesh(
+      new THREE.PlaneGeometry(CARD_W, CARD_H),
+      new THREE.MeshBasicMaterial({
+        map: makeCardTexture(c.title, c.sub, c.accent),
+        transparent: true, depthWrite: false, depthTest: false, opacity: 0,
+        toneMapped: false,
+      })
+    );
+    m.renderOrder = 10;
+    m.visible = false;
+    scene.add(m);
+    cards.push({ mesh: m, def: c });
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   renderAt(t) —— 唯一的真相来源
+   ══════════════════════════════════════════════════════════════ */
+const _camPos = new THREE.Vector3(), _look = new THREE.Vector3();
+const _fwd = new THREE.Vector3(), _right = new THREE.Vector3(), _up = new THREE.Vector3();
+const _q = new THREE.Quaternion(), _Z = new THREE.Vector3(0, 0, 1);
+const UP = new THREE.Vector3(0, 1, 0);
+
+function renderAt(t) {
+  t = clamp(t, 0, DUR);
+
+  /* ── 镜头 ── */
+  const u = uAt(t);
+  camPath.getPointAt(clamp(u, 0, 1), _camPos);
+  lookPath.getPointAt(clamp(u, 0, 1), _look);
+
+  // 确定性手持漂移（固定频率正弦叠加，非随机）
+  _camPos.x += Math.sin(t * 1.31) * 0.017 + Math.sin(t * 0.47) * 0.011;
+  _camPos.y += Math.sin(t * 1.73 + 1.1) * 0.014 + Math.sin(t * 0.61) * 0.009;
+
+  // 终幕俯冲时轻微拉近，制造压迫感
+  const dive = smoothstep(9.0, 11.4, t);
+  _look.z += dive * 0.0;
+  camera.position.copy(_camPos);
+  camera.lookAt(_look);
+  camera.fov = 42 - dive * 5.0 + smoothstep(5.6, 8.4, t) * 7.0;  // 俯瞰时广角一点
+  camera.updateProjectionMatrix();
+
+  camera.getWorldDirection(_fwd);
+  _right.crossVectors(_fwd, UP).normalize();
+  _up.crossVectors(_right, _fwd).normalize();
+
+  /* ── 主体 ── */
+  const appear = easeOut(smoothstep(1.5, 3.4, t));
+  knot.scale.setScalar(0.001 + appear * 1.0);
+  knot.rotation.set(t * 0.34, t * 0.52, t * 0.19);
+  knot.position.y = 1.35 + Math.sin(t * 0.9) * 0.075;
+  knot.material.opacity = 1;
+
+  core.position.copy(knot.position);
+  core.scale.setScalar(0.001 + appear * (1.0 + Math.sin(t * 2.4) * 0.055));
+  core.rotation.set(-t * 0.6, t * 0.8, 0);
+
+  const glowUp = smoothstep(9.4, 11.0, t);
+  glow.position.copy(knot.position);
+  glow.material.opacity = appear * (0.30 + Math.sin(t * 2.4) * 0.05 + glowUp * 0.55);
+  glow.scale.setScalar(9 + glowUp * 5);
+  glow2.position.copy(knot.position);
+  glow2.material.opacity = appear * (0.16 + glowUp * 0.42);
+  glow2.scale.setScalar(17 + glowUp * 9);
+
+  /* ── 地面 ── */
+  gridU.uTime.value = t;
+  gridU.uReveal.value = easeOut(norm(t, 0.02, 2.4));
+  gridU.uOpacity.value = 1.0 - smoothstep(9.7, 11.6, t) * 0.82;
+
+  /* ── 粒子场 ── */
+  const pAppear = smoothstep(2.2, 5.0, t);
+  const envFade = 1.0 - smoothstep(9.8, 11.8, t) * 0.72;
+  particles.material.opacity = pAppear * envFade;
+  const gRot = t * 0.115;
+  const cg = Math.cos(gRot), sg = Math.sin(gRot);
+  for (let i = 0; i < P.n; i++) {
+    const p = P.pos[i];
+    const x = p.x * cg - p.z * sg;
+    const z = p.x * sg + p.z * cg;
+    const bob = Math.sin(t * P.speed[i] + P.phase[i]);
+    P.dummy.position.set(x, p.y + bob * 0.22, z);
+    const s = P.scale[i] * (0.72 + 0.28 * (0.5 + 0.5 * bob)) * (0.25 + 0.75 * pAppear);
+    P.dummy.scale.setScalar(s);
+    P.dummy.rotation.set(t * P.speed[i] * 0.6 + P.phase[i], t * P.speed[i] * 0.4, P.phase[i]);
+    P.dummy.updateMatrix();
+    particles.setMatrixAt(i, P.dummy.matrix);
+  }
+  particles.instanceMatrix.needsUpdate = true;
+
+  /* ── 字卡：相机相对定位 + 弹簧入场 ── */
+  for (const { mesh, def } of cards) {
+    const on = t >= def.t0 - 0.02 && t <= def.t1 + 0.02;
+    mesh.visible = on;
+    if (!on) { mesh.material.opacity = 0; continue; }
+
+    const inA  = smoothstep(def.t0, def.t0 + 0.30, t);
+    const outA = 1 - smoothstep(def.t1 - 0.28, def.t1, t);
+    mesh.material.opacity = inA * outA;
+
+    const sp = easeOutBack(inA);                 // 过冲后落定 → 有重量
+    const dz = CARD_Z - (1 - sp) * 6.5;
+    const dx = def.ox + (1 - sp) * (def.ox >= 0 ? 1.1 : -1.1);
+    const dy = def.oy + (1 - easeOut(inA)) * 0.30;
+
+    mesh.position.copy(camera.position)
+      .addScaledVector(_fwd, -dz)
+      .addScaledVector(_right, dx)
+      .addScaledVector(_up, dy);
+    mesh.quaternion.copy(camera.quaternion);
+    _q.setFromAxisAngle(_Z, (1 - sp) * 0.10 * (def.roll || 0));  // 入场带一点 roll，落定归零
+    mesh.quaternion.multiply(_q);
+    mesh.scale.setScalar(0.90 + 0.10 * sp);
+  }
+
+  /* ── DOM 覆盖层：也是 t 的纯函数 ── */
+  const beat = t % 0.5;                          // 120 BPM，与音轨同一个公式
+  const flash = 0.115 * Math.exp(-beat / 0.055) * smoothstep(0.35, 1.0, t)
+              + 0.30 * Math.exp(-(t - 9.0) * (t - 9.0) / 0.012) * (t > 8.9 ? 1 : 0);
+  document.getElementById('flash').style.opacity = flash.toFixed(4);
+
+  document.getElementById('tc').textContent = 't = ' + t.toFixed(3) + ' s';
+  document.getElementById('fr').textContent =
+    'frame ' + String(Math.round(t * FPS)).padStart(3, '0') + ' / ' + Math.round(DUR * FPS);
+  document.getElementById('barfill').style.width = (t / DUR * 100).toFixed(3) + '%';
+
+  const rec = document.getElementById('rec');
+  rec.style.opacity = (0.45 + 0.55 * (0.5 + 0.5 * Math.sin(t * Math.PI * 2))).toFixed(3);
+
+  renderer.render(scene, camera);
+}
+
+/* ── 就绪门：字体加载完再建 CanvasTexture，否则中文会变豆腐块 ── */
+let readyP = null;
+window.ready = () => (readyP ??= (async () => {
+  await document.fonts.ready;
+  await document.fonts.load('700 92px "Noto Sans CJK SC"');
+  await document.fonts.load('400 40px "Noto Sans CJK SC"');
+  init();
+  renderAt(0);
+  return true;
+})());
+
+window.seek = async (t) => { await window.ready(); renderAt(t); };
+
+/* 让渲染脚本能自检：确认页面里没有偷偷用真实时钟 */
+window.__contract = { DURATION: DUR, FPS: FPS, W: W, H: H, cards: CARDS.length };
+</script>
+</body>
+</html>

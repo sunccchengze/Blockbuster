@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="utf-8">
+<title>code3d v3 — 墨 · ink on rice paper</title>
+<style>
+  html,body{margin:0;padding:0;width:1280px;height:720px;overflow:hidden;background:#ece5d6;}
+  #c{display:block;width:1280px;height:720px;}
+  .ov{position:fixed;pointer-events:none;}
+  #flash{inset:0;background:#fff8ec;opacity:0;mix-blend-mode:screen;}
+  #hud{left:34px;bottom:22px;font:500 12px/1 'DejaVu Sans Mono',monospace;
+       letter-spacing:.10em;color:rgba(48,46,42,.50);}
+</style>
+<script type="importmap">{ "imports": { "three": "/vendor/three.module.js" } }</script>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="ov" id="flash"></div>
+<div class="ov" id="hud">code3d v3 · 墨 · ink on rice paper · 24 fps · 180° shutter · <span id="fr">frame 000/240</span></div>
+
+<script type="module">
+import * as THREE from 'three';
+
+/* ══ 契约：DURATION + async seek(t)。每像素只是 t 的纯函数。 ══
+   v3 相对 v2 补的六课：
+   1 美术方向 commit：水墨/宣纸（物质纹理 = 质感）
+   2 动画原理：滴落有预备/挤压拉伸，溅射有跟随，盖印是"动作动机驱动的 cut"
+   3 电影感：24fps + 180° 快门运动模糊（时间超采样）
+   4 声音：one clock，锚点 T_DROP/T_IMPACT/T_SEAL 与 audio3.py 共用
+   6 混合管线：宣纸纤维 + 远山墨版由生成模型提供，代码叠合
+*/
+const W=1280,H=720,FPS=24,DUR=10.0;
+const T_DROP=1.0, T_IMPACT=1.9, T_SEAL=8.0;
+const MB=3;                       // 运动模糊子采样数
+const SHUT=(1/FPS)*0.5;           // 180° 快门
+window.DURATION=DUR; window.FPS=FPS;
+
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
+const norm=(t,a,b)=>clamp((t-a)/(b-a));
+const sstep=(a,b,t)=>{const x=norm(t,a,b);return x*x*(3-2*x);};
+const easeOut=x=>1-Math.pow(1-x,3);
+const easeOutBack=x=>{const c1=1.9,c3=c1+1;return 1+c3*Math.pow(x-1,3)+c1*Math.pow(x-1,2);};
+function mulberry32(a){return function(){a|=0;a=(a+0x6D2B79F5)|0;let t=Math.imul(a^(a>>>15),1|a);t=(t+Math.imul(t^(t>>>7),61|t))^t;return((t^(t>>>14))>>>0)/4294967296;};}
+
+const INK=0x17181a, VERM='#b03a2e';
+
+/* ══ 运镜：分段 smoothstep 锚点（calm push + 撞击震动） ══ */
+const POS=[[0,0,1.7,9.2],[2,0,1.45,7.0],[4.5,1.5,1.5,6.2],[7,-1.1,1.75,6.6],[8.2,0,1.5,6.9],[10,0,1.5,6.9]];
+const LOK=[[0,0,1.5,0],[2,0,1.2,0],[4.5,0,1.3,0],[7,0,1.4,0],[8.2,0,1.35,0],[10,0,1.35,0]];
+function track(keys,t,out){
+  for(let i=0;i<keys.length-1;i++){
+    const a=keys[i],b=keys[i+1];
+    if(t<=b[0]||i===keys.length-2){
+      const x=sstep(a[0],b[0],t);
+      out.set(a[1]+(b[1]-a[1])*x, a[2]+(b[2]-a[2])*x, a[3]+(b[3]-a[3])*x);
+      if(t<=b[0]) return out;
+    }
+  }
+  const l=keys[keys.length-1]; out.set(l[1],l[2],l[3]); return out;
+}
+function shake(t){
+  let s=0;
+  for(const T of [T_IMPACT,T_SEAL]){
+    const d=t-T; if(d>0) s+=Math.exp(-d/0.16)*Math.sin(d*42)*(T===T_SEAL?0.055:0.035);
+  }
+  return s;
+}
+
+/* ══ 字卡（纸底墨字 + 朱砂） ══ */
+const CARDS=[
+  { t0:2.30,t1:4.30, kick:'壹', title:'一滴墨', sub:'墜入宣紙，醒成山河', ox:-1.05, oy: 0.55, roll:-1 },
+  { t0:4.70,t1:6.80, kick:'貳', title:'筆未落', sub:'意先到',             ox: 1.10, oy:-0.62, roll: 1 },
+];
+const CARD_Z=-5.2, CARD_W=3.6, CARD_H=CARD_W*(320/1024);
+function makeCardTexture(def){
+  const cw=1024,ch=320,pad=40;
+  const cv=document.createElement('canvas');cv.width=cw;cv.height=ch;
+  const g=cv.getContext('2d'); g.clearRect(0,0,cw,ch);
+  // 宣纸底 wash：题跋裱贴感，保证压在墨块上仍可读
+  g.save();
+  g.shadowColor='rgba(236,229,214,0.95)'; g.shadowBlur=26;
+  g.fillStyle='rgba(238,231,217,0.86)';
+  g.beginPath(); g.roundRect(pad-14,pad-14,cw-pad*2+28,ch-pad*2+28,10); g.fill();
+  g.restore();
+  // 朱砂竖规
+  g.fillStyle=VERM; g.globalAlpha=0.85; g.fillRect(pad+8,pad+18,5,ch-pad*2-36); g.globalAlpha=1;
+  const tx=pad+44;
+  g.font='500 26px "Noto Serif CJK SC",serif'; g.letterSpacing='10px';
+  g.fillStyle='rgba(176,58,46,0.85)'; g.fillText(def.kick, tx, pad+52); g.letterSpacing='0px';
+  g.font='700 92px "Noto Serif CJK SC",serif';
+  g.fillStyle='rgba(23,24,26,0.94)'; g.fillText(def.title, tx, pad+150);
+  const tw=g.measureText(def.title).width;
+  g.font='400 38px "Noto Serif CJK SC",serif';
+  g.fillStyle='rgba(58,59,61,0.80)'; g.fillText(def.sub, tx, pad+218);
+  const t=new THREE.CanvasTexture(cv); t.colorSpace=THREE.SRGBColorSpace; t.anisotropy=8;
+  return { tex:t, tw, ty:pad+168, tx };
+}
+/* 落款 end card */
+function makeEndTexture(){
+  const cw=1024,ch=512;
+  const cv=document.createElement('canvas');cv.width=cw;cv.height=ch;
+  const g=cv.getContext('2d'); g.clearRect(0,0,cw,ch);
+  g.font='900 300px "Noto Serif CJK SC",serif';
+  g.fillStyle='rgba(23,24,26,0.95)'; g.fillText('墨', 70, 340);
+  g.fillStyle=VERM; g.globalAlpha=0.9; g.fillRect(430,84,4,352); g.globalAlpha=1;
+  g.font='400 36px "Noto Serif CJK SC",serif'; g.fillStyle='rgba(52,53,55,0.85)';
+  const line='一滴墨落紙成山河';
+  for(let i=0;i<line.length;i++) g.fillText(line[i], 470, 120+i*44);
+  g.font='500 20px "DejaVu Sans Mono",monospace'; g.letterSpacing='3px';
+  g.fillStyle='rgba(70,68,64,0.60)';
+  g.fillText('code3d v3 · ink on rice paper · 24fps · 180° shutter', 74, 452);
+  const t=new THREE.CanvasTexture(cv); t.colorSpace=THREE.SRGBColorSpace; t.anisotropy=8;
+  return t;
+}
+/* 印章 */
+function makeSealTexture(){
+  const s=256;
+  const cv=document.createElement('canvas');cv.width=cv.height=s;
+  const g=cv.getContext('2d'); g.clearRect(0,0,s,s);
+  g.fillStyle=VERM; g.beginPath(); g.roundRect(10,10,s-20,s-20,14); g.fill();
+  g.strokeStyle='rgba(255,246,236,0.9)'; g.lineWidth=6; g.strokeRect(26,26,s-52,s-52);
+  g.fillStyle='rgba(255,246,236,0.95)'; g.font='700 130px "Noto Serif CJK SC",serif';
+  g.textAlign='center'; g.textBaseline='middle'; g.fillText('墨', s/2, s/2+8);
+  const t=new THREE.CanvasTexture(cv); t.colorSpace=THREE.SRGBColorSpace;
+  return t;
+}
+/* 笔触下划线（ tapered brush stroke ） */
+function makeBrushTexture(){
+  const cw=512,ch=32;
+  const cv=document.createElement('canvas');cv.width=cw;cv.height=ch;
+  const g=cv.getContext('2d');
+  const rand=mulberry32(7);
+  g.fillStyle=VERM;
+  g.beginPath(); g.moveTo(0,ch/2);
+  for(let x=0;x<=cw;x+=8){
+    const w=(3+9*Math.sin(x/cw*Math.PI))*(0.7+0.6*rand());
+    g.lineTo(x, ch/2-w);
+  }
+  for(let x=cw;x>=0;x-=8){
+    const w=(3+9*Math.sin(x/cw*Math.PI))*(0.7+0.6*rand());
+    g.lineTo(x, ch/2+w);
+  }
+  g.closePath(); g.fill();
+  const t=new THREE.CanvasTexture(cv); t.colorSpace=THREE.SRGBColorSpace;
+  return t;
+}
+
+/* ══ 全局 ══ */
+let renderer,scene,camera;
+let paperTex,paperTile,mtnTex;
+let mountains, drop, swirl, swirlOut, bloom, ripples=[], drops, dropsD, seal, sealG;
+let cards=[], endCard;
+let rtSub, rtAccA, rtAccB, accRead, accWrite, postScene, postCam, quad, matMix, matComp;
+
+const VERT=`varying vec2 vUv; void main(){ vUv=uv; gl_Position=vec4(position.xy,0.0,1.0); }`;
+const HASH=`float hash(vec2 p){ p=fract(p*vec2(123.34,456.21)); p+=dot(p,p+45.32); return fract(p.x*p.y); }
+  float vnoise(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.0-2.0*f);
+    float a=hash(i), b=hash(i+vec2(1.0,0.0)), c=hash(i+vec2(0.0,1.0)), d=hash(i+vec2(1.0,1.0));
+    return mix(mix(a,b,f.x), mix(c,d,f.x), f.y); }`;
+
+function makePost(){
+  postScene=new THREE.Scene(); postCam=new THREE.OrthographicCamera(-1,1,1,-1,0,1);
+  quad=new THREE.Mesh(new THREE.PlaneGeometry(2,2),null); quad.frustumCulled=false; postScene.add(quad);
+  matMix=new THREE.ShaderMaterial({depthTest:false,depthWrite:false,uniforms:{tA:{value:null},tB:{value:null},uW:{value:1}},
+    vertexShader:VERT, fragmentShader:`uniform sampler2D tA,tB; uniform float uW; varying vec2 vUv;
+      void main(){ gl_FragColor=mix(texture2D(tA,vUv),texture2D(tB,vUv),uW); }`});
+  matComp=new THREE.ShaderMaterial({depthTest:false,depthWrite:false,uniforms:{
+      tScene:{value:null}, tPaper:{value:null}, uExp:{value:1.0}, uFrame:{value:0}},
+    vertexShader:VERT, fragmentShader:`
+      uniform sampler2D tScene,tPaper; uniform float uExp,uFrame; varying vec2 vUv;
+      ${HASH}
+      vec3 lin2srgb(vec3 c){ return mix(c*12.92, 1.055*pow(max(c,vec3(0.0)),vec3(1.0/2.4))-0.055, step(vec3(0.0031308),c)); }
+      void main(){
+        vec3 col=lin2srgb(texture2D(tScene,vUv).rgb*uExp);
+        col=mix(col, col*col*(3.0-2.0*col), 0.25);            // 轻 S 曲线，保住纸白
+        vec3 pap=texture2D(tPaper,vUv*vec2(2.3,1.30)).rgb;     // 纤维压进墨里
+        col*=mix(vec3(1.0), pap, 0.24);
+        col*=vec3(1.02,1.00,0.97);                            // 纸的暖
+        vec2 d=vUv-0.5;
+        col*=1.0-smoothstep(0.52,0.98,length(d*vec2(1.05,0.95)))*0.17;   // 纸边渍
+        float l=dot(col,vec3(0.2126,0.7152,0.0722));
+        col+=(hash(gl_FragCoord.xy+vec2(uFrame*137.0,uFrame*71.0))-0.5)*0.030*(1.0-l*0.5);
+        gl_FragColor=vec4(col,1.0);
+      }`});
+}
+function blit(mat,target){ quad.material=mat; renderer.setRenderTarget(target); renderer.render(postScene,postCam); }
+
+/* ══ init ══ */
+function init(){
+  renderer=new THREE.WebGLRenderer({canvas:document.getElementById('c'),antialias:false,alpha:false,preserveDrawingBuffer:true});
+  renderer.setPixelRatio(1); renderer.setSize(W,H,false);
+  renderer.toneMapping=THREE.NoToneMapping; renderer.outputColorSpace=THREE.SRGBColorSpace;
+
+  const rtOpt={type:THREE.HalfFloatType};
+  rtSub =new THREE.WebGLRenderTarget(W,H,Object.assign({samples:2},rtOpt));
+  rtAccA=new THREE.WebGLRenderTarget(W,H,rtOpt);
+  rtAccB=new THREE.WebGLRenderTarget(W,H,rtOpt);
+  makePost();
+
+  scene=new THREE.Scene();
+  scene.background=paperTex;
+  camera=new THREE.PerspectiveCamera(40,W/H,0.1,200);
+
+  scene.add(new THREE.HemisphereLight(0xffffff,0xb9b2a4,1.0));
+  const dir=new THREE.DirectionalLight(0xfff4e0,1.5); dir.position.set(-4,7,5); scene.add(dir);
+
+  // 远山墨版（multiply 叠在宣纸上）——生成模型提供的"物质"
+  mountains=new THREE.Mesh(new THREE.PlaneGeometry(46,26),
+    new THREE.MeshBasicMaterial({map:mtnTex,transparent:true,blending:THREE.MultiplyBlending,premultipliedAlpha:true,depthWrite:false,opacity:0}));
+  mountains.position.set(0,2.0,-26); scene.add(mountains);
+
+  // 滴
+  drop=new THREE.Mesh(new THREE.SphereGeometry(0.17,24,18),
+    new THREE.MeshBasicMaterial({color:INK}));
+  drop.visible=false; scene.add(drop);
+
+  // 墨晕（撞纸后扩散）
+  bloom=new THREE.Mesh(new THREE.CircleGeometry(1,48),
+    new THREE.ShaderMaterial({transparent:true,depthWrite:false,uniforms:{uA:{value:0}},
+      vertexShader:`varying vec2 vUv; void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,
+      fragmentShader:`uniform float uA; varying vec2 vUv; ${HASH}
+        void main(){ float r=length(vUv-0.5)*2.0;
+          float a=(1.0-smoothstep(0.35,1.0,r))*uA;
+          a*=0.75+0.5*hash(floor(vUv*90.0));          // 晕的边缘不均匀
+          if(a<0.004) discard;
+          gl_FragColor=vec4(vec3(0.020,0.022,0.030)*(0.7+0.6*a), a); }`}));
+  bloom.rotation.x=-Math.PI/2; bloom.position.y=0.012; bloom.visible=false; scene.add(bloom);
+
+  // 涟漪
+  for(let i=0;i<3;i++){
+    const r=new THREE.Mesh(new THREE.RingGeometry(0.94,1.0,64),
+      new THREE.MeshBasicMaterial({color:INK,transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide}));
+    r.rotation.x=-Math.PI/2; r.position.y=0.02+i*0.004; r.visible=false; scene.add(r); ripples.push(r);
+  }
+
+  // 溅射液滴（instanced，弹道）
+  const rand=mulberry32(20260930);
+  const DN=46;
+  drops=new THREE.InstancedMesh(new THREE.SphereGeometry(0.045,10,8),
+    new THREE.MeshBasicMaterial({color:INK,transparent:true,opacity:1}),DN);
+  drops.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  dropsD=[];
+  for(let i=0;i<DN;i++){
+    const a=rand()*Math.PI*2, sp=1.4+rand()*3.4, up=2.2+rand()*3.6;
+    dropsD.push({vx:Math.cos(a)*sp, vz:Math.sin(a)*sp*0.55, vy:up, s:0.5+rand()*1.1, dl:rand()*0.12});
+  }
+  scene.add(drops);
+
+  // 主体：墨 swirl（torus knot，墨着色器 + 反壳描边）
+  const knotGeo=new THREE.TorusKnotGeometry(1.05,0.30,200,30);
+  swirl=new THREE.Mesh(knotGeo,new THREE.ShaderMaterial({transparent:true,depthWrite:true,
+    uniforms:{uO:{value:1}},
+    vertexShader:`varying vec3 vN,vV,vW;
+      void main(){ vN=normalize(normalMatrix*normal);
+        vec4 mv=modelViewMatrix*vec4(position,1.0); vV=normalize(-mv.xyz);
+        vW=(modelMatrix*vec4(position,1.0)).xyz;
+        gl_Position=projectionMatrix*mv; }`,
+    fragmentShader:`uniform float uO; varying vec3 vN,vV,vW; ${HASH}
+      void main(){
+        vec3 N=normalize(vN), V=normalize(vV);
+        float facing=abs(dot(N,V));
+        float lam=clamp(dot(N,normalize(vec3(-0.5,0.8,0.45)))*0.5+0.5,0.0,1.0);
+        float band=smoothstep(0.34,0.42,lam)+smoothstep(0.60,0.70,lam);    // 0..2
+        float c=1.0-band*0.18;                                             // 浓度基底
+        // 干笔 dry-brush：沿笔势拉长的平滑噪声，只在轮廓附近打穿
+        float db=vnoise(vec2((vW.x+vW.y)*2.6, (vW.y-vW.x)*17.0));
+        // pigment granulation：细而平滑
+        float gr=vnoise(vW.xy*46.0+vW.z*23.0);
+        c*=0.90+0.16*gr;
+        // 边缘积墨 pigment pooling
+        c=mix(c*1.28,c,smoothstep(0.03,0.30,facing));
+        c=clamp(c,0.18,1.0);
+        // 浓→淡 映射到 墨黑→灰wash（linear）
+        vec3 col=mix(vec3(0.105),vec3(0.012),c);
+        // 体内不透明；仅最外缘羽化 + 轮廓附近被干笔打穿露纸
+        float dry=mix(1.0, smoothstep(0.30,0.62,db), 0.75*(1.0-smoothstep(0.05,0.42,facing)));
+        float alpha=smoothstep(0.0,0.09,facing)*uO*dry;
+        if(alpha<0.004) discard;
+        gl_FragColor=vec4(col,alpha);
+      }`}));
+  swirl.visible=false; scene.add(swirl);
+  swirlOut=new THREE.Mesh(knotGeo,new THREE.MeshBasicMaterial({color:INK,side:THREE.BackSide,transparent:true,opacity:0.75,depthWrite:false}));
+  swirlOut.visible=false; scene.add(swirlOut);
+
+  // 印章
+  sealG=new THREE.Group();
+  seal=new THREE.Mesh(new THREE.PlaneGeometry(0.85,0.85),
+    new THREE.MeshBasicMaterial({map:makeSealTexture(),transparent:true,opacity:0,depthWrite:false,depthTest:false,toneMapped:false}));
+  seal.renderOrder=12; sealG.add(seal); sealG.visible=false; scene.add(sealG);
+
+  // 字卡
+  const brush=makeBrushTexture();
+  for(const def of CARDS){
+    const {tex,tw,ty,tx}=makeCardTexture(def);
+    const m=new THREE.Mesh(new THREE.PlaneGeometry(CARD_W,CARD_H),
+      new THREE.MeshBasicMaterial({map:tex,transparent:true,depthWrite:false,depthTest:false,opacity:0,toneMapped:false}));
+    m.renderOrder=10; m.visible=false;
+    const uw=CARD_W*tw/1024;
+    const ug=new THREE.PlaneGeometry(uw,0.055); ug.translate(uw/2,0,0);
+    const ul=new THREE.Mesh(ug,new THREE.MeshBasicMaterial({map:brush,transparent:true,opacity:0,depthWrite:false,depthTest:false,toneMapped:false}));
+    ul.position.set((tx/1024-0.5)*CARD_W,(0.5-ty/320)*CARD_H,0.002);
+    ul.renderOrder=11; ul.scale.x=0.0001; m.add(ul);
+    scene.add(m); cards.push({mesh:m,ul,def});
+  }
+  endCard=new THREE.Mesh(new THREE.PlaneGeometry(5.4,2.7),
+    new THREE.MeshBasicMaterial({map:makeEndTexture(),transparent:true,depthWrite:false,depthTest:false,opacity:0,toneMapped:false}));
+  endCard.renderOrder=10; endCard.visible=false; scene.add(endCard);
+}
+
+/* ══ setState(t)：只摆场景，不动 DOM ══ */
+const _p=new THREE.Vector3(),_l=new THREE.Vector3(),_d=new THREE.Object3D();
+const _q=new THREE.Quaternion(),_Z=new THREE.Vector3(0,0,1);
+function setState(t){
+  t=clamp(t,0,DUR);
+  track(POS,t,_p); track(LOK,t,_l);
+  _p.x+=Math.sin(t*1.1)*0.012+Math.sin(t*0.43)*0.008;
+  _p.y+=Math.sin(t*1.6+1.0)*0.010;
+  const sh=shake(t); _p.x+=sh; _p.y+=sh*0.6;
+  camera.position.copy(_p); camera.lookAt(_l);
+  camera.rotateZ(0.02*Math.sin(t*0.4+0.6));
+  camera.updateMatrixWorld();
+  const _f=new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld,2).multiplyScalar(-1);
+  const _r=new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld,0);
+  const _u=new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld,1);
+
+  // 远山：淡入 + 视差
+  mountains.material.opacity=sstep(0.25,1.5,t)*0.92*(1-sstep(7.6,8.4,t)*0.55);
+  mountains.position.x=-_p.x*0.35;
+  mountains.position.y=2.0-_p.y*0.18;
+
+  // ── 滴：预备 → 挤压拉伸下落 ──
+  const grow=sstep(0.35,0.92,t);
+  const hesitate=1-0.22*Math.exp(-Math.pow((t-0.86)/0.10,2));   // 临门一顿
+  if(t<T_IMPACT){
+    drop.visible=t>0.30;
+    const fall=norm(t,T_DROP,T_IMPACT); const ff=fall*fall;     // 加速
+    const y=3.15-3.0*ff;
+    const vel=ff;                                                // 速度→拉伸
+    drop.position.set(0,y,0);
+    drop.scale.setScalar(0.001+grow*hesitate);
+    drop.scale.y*=(1+vel*1.1); drop.scale.x*=(1-vel*0.35); drop.scale.z=drop.scale.x;
+  } else drop.visible=false;
+
+  // ── 撞纸：墨晕 + 涟漪 + 溅射 ──
+  const ib=norm(t,T_IMPACT,T_IMPACT+2.6);
+  bloom.visible=t>=T_IMPACT&&ib<1;
+  if(bloom.visible){
+    bloom.scale.setScalar(0.2+easeOut(ib)*2.6);
+    bloom.material.uniforms.uA.value=(1-ib)*0.95;
+  }
+  ripples.forEach((r,i)=>{
+    const st=T_IMPACT+0.10*i, rr=norm(t,st,st+1.5);
+    r.visible=t>=st&&rr<1;
+    if(r.visible){ r.scale.setScalar(0.3+easeOut(rr)*(2.2+i*0.9)); r.material.opacity=(1-rr)*0.45; }
+  });
+  const dwin=t>=T_IMPACT&&t<T_IMPACT+1.6;
+  drops.visible=dwin;
+  if(dwin){
+    for(let i=0;i<dropsD.length;i++){
+      const d=dropsD[i]; const tt=t-T_IMPACT-d.dl;
+      const alive=tt>0&&tt<1.5;
+      if(!alive){ _d.scale.setScalar(0.0001); _d.position.set(0,-9,0); }
+      else{
+        _d.position.set(d.vx*tt, 0.10+d.vy*tt-4.6*tt*tt, d.vz*tt);
+        const sq=clamp(1-tt*0.55,0.15,1);
+        _d.scale.setScalar(d.s*sq*(0.6+0.4*sstep(0,0.15,tt)));
+        _d.scale.y*=1.25;
+      }
+      _d.updateMatrix(); drops.setMatrixAt(i,_d.matrix);
+    }
+    drops.instanceMatrix.needsUpdate=true;
+    drops.material.opacity=1-sstep(1.25,1.6,t-T_IMPACT);
+  }
+
+  // ── swirl：从撞点醒 → 舞 → 收 ──
+  const rise=sstep(T_IMPACT+0.15,T_IMPACT+1.5,t);
+  const collapse=1-sstep(6.9,7.9,t);
+  const sw=easeOutBack(rise)*collapse;
+  swirl.visible=sw>0.002; swirlOut.visible=false;      // 反壳描边会给墨罩灰纱，弃用
+  if(swirl.visible){
+    const cc=1-collapse;
+    // 收笔：整团墨凝浓、缩小、沉向印位，而不是淡成灰圈
+    swirl.scale.setScalar(0.001+sw*(1.0-cc*0.45));
+    swirl.position.set(0,0.35+rise*1.05-cc*0.85,0);
+    swirl.rotation.set(t*0.30,t*0.46+cc*1.2,t*0.16);
+    swirl.material.uniforms.uO.value=Math.pow(collapse,1.6);
+  }
+
+  // ── 印章：盖下去（动作动机的 cut） ──
+  const ss=norm(t,T_SEAL,T_SEAL+0.5);
+  sealG.visible=t>=T_SEAL-0.02;
+  if(sealG.visible){
+    const st=easeOutBack(sstep(0,0.55,ss));
+    seal.material.opacity=sstep(0,0.25,ss);
+    seal.scale.setScalar(1.9-0.9*st);
+    seal.rotation.z=(1-st)*0.35;
+    // 落款位：end card 右侧
+    sealG.position.copy(camera.position).addScaledVector(_f,5.0).addScaledVector(_r,1.85).addScaledVector(_u,-0.35);
+    sealG.quaternion.copy(camera.quaternion);
+  }
+
+  // ── 字卡 ──
+  for(const {mesh,ul,def} of cards){
+    const on=t>=def.t0-0.02&&t<=def.t1+0.02;
+    mesh.visible=on; ul.visible=on;
+    if(!on){mesh.material.opacity=0;ul.material.opacity=0;continue;}
+    const inA=sstep(def.t0,def.t0+0.35,t), outA=1-sstep(def.t1-0.30,def.t1,t);
+    mesh.material.opacity=inA*outA;
+    const sp=easeOutBack(inA);
+    mesh.position.copy(camera.position)
+      .addScaledVector(_f,-(CARD_Z-(1-sp)*5.0))
+      .addScaledVector(_r,def.ox+(1-sp)*(def.ox>=0?0.9:-0.9))
+      .addScaledVector(_u,def.oy+(1-easeOut(inA))*0.25);
+    mesh.quaternion.copy(camera.quaternion);
+    _q.setFromAxisAngle(_Z,(1-sp)*0.08*def.roll); mesh.quaternion.multiply(_q);
+    mesh.scale.setScalar(0.92+0.08*sp);
+    ul.scale.x=Math.max(0.0001,sstep(def.t0+0.12,def.t0+0.62,t));
+    ul.material.opacity=inA*outA*0.9;
+  }
+  // end card
+  const eo=sstep(T_SEAL+0.15,T_SEAL+0.9,t);
+  endCard.visible=eo>0.002;
+  if(endCard.visible){
+    endCard.material.opacity=eo;
+    endCard.position.copy(camera.position).addScaledVector(_f,5.2).addScaledVector(_r,-0.55).addScaledVector(_u,0.10+(1-eo)*0.25);
+    endCard.quaternion.copy(camera.quaternion);
+  }
+}
+
+/* ══ compose：运动模糊累加结果 → 纸感后期 ══ */
+function compose(t){
+  matComp.uniforms.uFrame.value=Math.round(t*FPS);
+  matComp.uniforms.tScene.value=accRead.texture;
+  matComp.uniforms.tPaper.value=paperTile;
+  blit(matComp,null);
+  document.getElementById('fr').textContent='frame '+String(Math.round(t*FPS)).padStart(3,'0')+'/'+Math.round(DUR*FPS);
+  const beatFlash=0.05*Math.exp(-(t-T_IMPACT)*(t-T_IMPACT)/0.004)
+                +0.07*Math.exp(-(t-T_SEAL)*(t-T_SEAL)/0.004);
+  document.getElementById('flash').style.opacity=beatFlash.toFixed(4);
+}
+
+let readyP=null;
+window.ready=()=>(readyP??=(async()=>{
+  await document.fonts.ready;
+  await document.fonts.load('900 300px "Noto Serif CJK SC"');
+  await document.fonts.load('700 92px "Noto Serif CJK SC"');
+  const load=u=>new Promise((res,rej)=>new THREE.TextureLoader().load(u,res,undefined,rej));
+  const [p,m]=await Promise.all([load('/assets/paper.jpg'),load('/assets/mountains.png')]);
+  paperTex=p; paperTex.colorSpace=THREE.SRGBColorSpace;
+  paperTile=p.clone(); paperTile.needsUpdate=true;
+  paperTile.wrapS=paperTile.wrapT=THREE.RepeatWrapping;
+  mtnTex=m; mtnTex.colorSpace=THREE.SRGBColorSpace;
+  init(); setState(0);
+  return true;
+})());
+
+window.seek=async t=>{
+  await window.ready();
+  for(let k=0;k<MB;k++){
+    setState(t+(k+0.5)/MB*SHUT);
+    renderer.setRenderTarget(rtSub); renderer.render(scene,camera);
+    if(k===0){ matMix.uniforms.tA.value=rtSub.texture; matMix.uniforms.tB.value=rtSub.texture; matMix.uniforms.uW.value=1; blit(matMix,rtAccA); accRead=rtAccA; accWrite=rtAccB; }
+    else{ matMix.uniforms.tA.value=accRead.texture; matMix.uniforms.tB.value=rtSub.texture; matMix.uniforms.uW.value=1/(k+1); blit(matMix,accWrite); const s=accRead; accRead=accWrite; accWrite=s; }
+  }
+  compose(t);
+};
+window.__contract={DURATION:DUR,FPS:FPS,W:W,H:H,mb:MB,shutter:SHUT};
+</script>
+</body>
+</html>

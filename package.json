@@ -1,0 +1,34 @@
+{
+  "name": "blockbuster",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node scripts/generate.js",
+    "generate": "node scripts/generate.js",
+    "render": "node scripts/render_all.js",
+    "audio": "node src/audio/compose_v3.js",
+    "test": "node -e 'require(\"./src/core/audio/qc\").evaluateAudioQuality(\"./video/code3d-v3-score.wav\")'"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sunccchengze/Blockbuster.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/sunccchengze/Blockbuster/issues"
+  },
+  "homepage": "https://github.com/sunccchengze/Blockbuster#readme",
+  "dependencies": {
+    "@ffmpeg-installer/ffmpeg": "^1.1.0",
+    "@ffmpeg-installer/linux-x64": "^4.1.0",
+    "@ffprobe-installer/ffprobe": "^2.1.2",
+    "@ffprobe-installer/linux-x64": "^5.2.0",
+    "@napi-rs/canvas": "^1.0.9",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "three": "^0.186.1"
+  }
+}

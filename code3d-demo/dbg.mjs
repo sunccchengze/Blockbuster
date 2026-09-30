@@ -1,0 +1,17 @@
+import { chromium } from 'playwright';
+import http from 'node:http'; import fs from 'node:fs'; import path from 'node:path';
+const ROOT=process.cwd(); const PORT=8199;
+const MIME={'.html':'text/html;charset=utf-8','.js':'text/javascript;charset=utf-8'};
+const srv=http.createServer((q,s)=>{const rel=(q.url.split('?')[0]).replace(/^\/+/,'')||'index.html';const fp=path.join(ROOT,rel);
+ if(!fs.existsSync(fp)){s.writeHead(404);return s.end();} s.writeHead(200,{'Content-Type':MIME[path.extname(fp)]||'application/octet-stream'}); fs.createReadStream(fp).pipe(s);});
+await new Promise(r=>srv.listen(PORT,'127.0.0.1',r));
+const b=await chromium.launch({args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--no-sandbox']});
+const p=await b.newPage({viewport:{width:640,height:360}});
+p.on('console',m=>console.log('[console]',m.type(),m.text().slice(0,400)));
+p.on('pageerror',e=>console.log('[pageerror]',e.message.slice(0,400)));
+await p.goto(`http://127.0.0.1:${PORT}/scene-v3.html`);
+await p.waitForFunction(()=>typeof window.seek==='function');
+await p.evaluate(()=>window.seek(4.0));
+const info=await p.evaluate(()=>{ const w=window; return w.__dbg ? w.__dbg() : 'no __dbg'; });
+console.log('dbg:', JSON.stringify(info));
+await b.close(); srv.close();
