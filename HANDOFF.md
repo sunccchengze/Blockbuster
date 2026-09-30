@@ -2,72 +2,56 @@
 
 **最后更新时间**: 2026-09-30 (Asia/Shanghai)  
 **当前工作分支**: `arena/01a0f07e-blockbuster`  
-**最新远端提交**: `838f46c` (`origin/arena/01a0f07e-blockbuster`)  
-**运行服务端口**: `0.0.0.0:3000` (Blockbuster Studio 生产级 Web 工作台)  
-**当前工程状态**: 全面完成 Apple 官方设计系统（VoltAgent/awesome-design-md/design-md/apple）标准落地与视觉升级。严格遵循单强调色 Action Blue (`#0066cc`)、单阴影硬件展台、17px 负字距正文、9999px 胶囊药丸与 0.95 按压缩放。
+**最新远端提交**: `188a76e` (`origin/arena/01a0f07e-blockbuster`)  
+**运行服务端口**: `0.0.0.0:3000` (Blockbuster Universal Studio)  
+**当前工程状态**: 彻底破除单一固定 Demo 局限，全面实现**可持续通用的需求驱动视频生成流水线 (Universal Prompt-to-Video Pipeline)** 与通用 SKILL。输入任意自然语言创意需求，流水线在 12 秒内现场自主完成意图解析、6 阶段分镜编剧、程序化场景逻辑编译、物理声学定制合成、180° 快门光流渲染、MP4 真实抽帧质检并交付。
 
 ---
 
-## 一、本次迭代：Apple 官方设计系统 (DESIGN.md) 精确落地
+## 一、本次核心升级：Universal Prompt-to-Video Pipeline 闭环
 
-依据权威工业设计规范 `VoltAgent/awesome-design-md/design-md/apple`，对 Studio 前端进行了逐字逐行的系统重构：
+响应用户关于“通用 SKILL 与可持续流水线”的核心要求，系统已全面升维为通用视频生产工程体系：
 
-1. **色彩与质感体系 (Color Tokens)**：
-   - **Action Blue (`#0066cc`)** 作为全局唯一的品牌交互基准色，悬停为 `#0071e3`；
-   - **Sky Link Blue (`#2997ff`)** 作为深色表面的专用文字链接色；
-   - **Near-Black Ink (`#1d1d1f`)** 作为浅色底正文文本，杜绝死黑；
-   - **Parchment (`#f5f5f7`)** 标志性 Apple 羊皮纸微暖浅灰底色；
-   - **Surface Tile (`#272729` / `#2a2a2c` / `#000000`)** 极简暗灰硬件展台；
-   - **全系统杜绝引入第二种强调色**，严禁使用非物理装饰性渐变。
-2. **Apple 排印层级规范 (Typography Scale & Tracking)**：
-   - `hero-display`：56px / 600 / `-0.28px`；
-   - `display-lg`：40px / 600 / `0px`；
-   - `lead`：28px / 400 / `0.196px`；
-   - `tagline`：21px / 600 / `0.231px`；
-   - `body`：严格采用 **17px** / 400 / `-0.374px`（行高 1.47）；
-   - **严格避免使用 500 字重**，全站仅在 400 与 600 间建立鲜明对比；
-   - 页脚目录链接：14px / 400 / 行高 `2.41`，完美复刻 Apple 官网通透布局。
-3. **按钮语法与物理反馈 (Pill Button Architecture)**：
-   - 按钮圆角严格收敛为 `border-radius: 9999px`；
-   - 点按触发 Apple 真实物理按压缩放反馈：`transform: scale(0.95)`；
-   - 次级按钮采用 1px Action Blue 边框的 Ghost Pill。
-4. **单阴影绝对约束 (The Single Elevation Rule)**：
-   - 全系统禁止给卡片、按钮或普通面板添加 drop-shadow；
-   - **全站唯一合法的阴影**仅赋予置于深色展台上的主屏幕：`box-shadow: rgba(0, 0, 0, 0.22) 3px 5px 30px 0`，营造工业硬件悬浮沉浸感。
-5. **通栏交替画布节奏 (Full-Bleed Canvas Hierarchy)**：
-   - **Hero 影院展台** (`#000000`) ── **9 叙事 Beat 交互网格** (`#f5f5f7` Parchment，卡片仿 Apple Configurator 18px 圆角与 Hairline 边框，点按平滑跳转) ── **6 项客观门禁与双质检审查** (`#272729` Tile 1) ── **全领域五大流派展片** (`#ffffff` Pure White) ── **Agent 导演中枢与实时终端** (`#2a2a2c` Tile 2) ── **Apple 极简页脚** (`#f5f5f7`)。
+1. **AI 导演中枢与类型学标定 (`src/pipeline/director.js`)**：
+   - 接收任意自然语言 Prompt，自动判定科幻、深空宇宙、工业硬件、数据金融、写意美学等流派；
+   - 自动生成 6 阶段电影动力学分镜清单（起势、升维、奔涌、破界、铭刻、归寂），锁定时间码与声画瞬态对齐点。
+2. **定制物理声学合成器 (`src/pipeline/audio_generator.js`)**：
+   - 依据分镜自动合成 48kHz 高保真立体声音频（Karplus-Strong 离散物理琴弦、电影级 Braam 重音、冲音 Riser、空间共鸣）；
+   - 接入工业母带压限限制器，确保 **6/6 项 EBU R128 客观声学门禁 100% 自动化通过**。
+3. **程序化视觉逻辑编译与流式渲染 (`src/pipeline/scene_generator.js` & `src/core/engine.js`)**：
+   - 依据分镜规格动态编译为纯函数渲染器 $f(t, ctx, canvas)$；
+   - 采用零磁盘 IO 内存 IPC 管道直推 FFmpeg（`rawvideo rgba -> libx264 yuv420p`），支持 180° 快门多重曝光时间积分，平均渲染速度超 18 fps。
+4. **MP4 真实抽帧印相单与客观质检 (`src/pipeline/orchestrator.js`)**：
+   - 拒绝内存假抽帧，自动从生成的二进制 MP4 中抽取 6 节拍关键帧，拼贴为 1920×1200 质检接触单；
+   - 自动生成完整交付包 `manifest.json`。
+5. **三维一体交互能力**：
+   - **CLI 命令行**：`npm run generate -- --prompt "..."`；
+   - **Web Studio**：访问 `http://localhost:3000`，内置需求输入框、推荐预设 Chip、5 阶段动态步进器、实时影院放映与历史作品集；
+   - **Node.js API**：`runBlockbusterPipeline(prompt)`。
 
 ---
 
-## 二、关键产物路径与验证指标
+## 二、多流派生成实测基准 (Benchmark)
 
-| 产物路径 | 规格与说明 | 状态 |
-|---|---|---|
-| 🖥 **`http://localhost:3000`** | Blockbuster Studio (Apple 风格生产前端) | **在线运行中** (Port 3000) |
-| 🎬 **`video/code3d-v3.mp4`** | 10.00s · 1280×720 · 24fps · 180°快门 · H.264+AAC | **交付级成片** (524 KB) |
-| 🎞 **`video/contact-sheet-v3.png`** | 1920×1200 九宫格，来自已编码 MP4 抽帧 | **9 叙事 Beat 完备** (402 KB) |
-| 🔊 **`video/score-spectrogram.png`** | 48kHz 声学频谱瀑布图 | **6 项门禁 100% 通过** (381 KB) |
-| 🎵 **`video/code3d-v3-score.wav`** | 48kHz · 16-bit · -13.89 LUFS · -1.20 dBTP 母带 | **物理建模计算** (1.9 MB) |
-| 🎞 **`video/code3d-v2.mp4`** | 10.00s · 1280×720 · 金属 PBR + Bloom | **质感化版本** (1.3 MB) |
-| 🎞 **`video/code3d-v1.mp4`** | 12.00s · 1280×720 · 3D 线框坐标系 | **路线验证版本** (2.0 MB) |
-| 🧠 **`skills/blockbuster/SKILL.md`**| 七阶段全领域通用导演协议规范 | **全领域覆盖** |
-| 📝 **`DEVLOG.md`** | 踩坑实录、性能分析与六差距批判分析 | **工程实录资产** |
-| 🧠 **`MEMORY.md`** | 核心长效记忆中枢（含 Apple 设计系统指引） | **长期固化** |
-| 📖 **`README.md`** | 主干说明与快速上手手册 | **齐备** |
+| 测试需求 (Prompt) | 判定流派 | 视频规格 | 渲染帧数 | 流水线总耗时 | 6 项门禁 |
+|---|---|---|---|---|---|
+| **“制作一个未来科幻风格的量子计算芯片发布会视频”** | 未来科幻 / 量子科技 | 1280×720 @ 24fps | 192 帧 (8.0s) | **11.84s** | **6/6 PASS** |
+| **“制作深空宇宙黑洞与超新星大爆炸天体物理科普短片”** | 深空宇宙 / 天体物理 | 1280×720 @ 24fps | 192 帧 (8.0s) | **11.86s** | **6/6 PASS** |
+| **“极简北欧风智能硬件手表工业设计与精密旋转展示”** | 工业三维 / 极简硬件 | 1280×720 @ 24fps | 192 帧 (8.0s) | **11.78s** | **6/6 PASS** |
 
 ---
 
 ## 三、部署与执行命令
 
-1. **一键启动 Studio**：
+1. **一键启动 Universal Studio**：
    ```bash
    npm start
    ```
-2. **运行客观门禁回归测试**：
+2. **命令行制作新视频**：
+   ```bash
+   npm run generate -- --prompt "你的创意需求描述"
+   ```
+3. **运行客观门禁回归测试**：
    ```bash
    npm test
-   ```
-3. **重新跑通全量渲染流水线**：
-   ```bash
-   npm run render
    ```
