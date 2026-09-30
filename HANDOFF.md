@@ -2,31 +2,40 @@
 
 **最后更新时间**: 2026-09-30 (Asia/Shanghai)  
 **当前工作分支**: `arena/01a0f07e-blockbuster`  
-**最新远端提交**: `edb9261` (`origin/arena/01a0f07e-blockbuster`)  
+**最新远端提交**: `354fbc2` (`origin/arena/01a0f07e-blockbuster`)  
 **运行服务端口**: `0.0.0.0:3000` (Blockbuster Studio 生产级 Web 工作台)  
-**当前工程状态**: 全面按 Apple 官方设计系统（VoltAgent/awesome-design-md/design-md/apple）完成前端重构与视觉升级。博物馆级摄影陈列感、交替冷暖色块、SF Pro 紧凑字距、Action Blue 单一交互色彩全部严格落地。
+**当前工程状态**: 全面完成 Apple 官方设计系统（VoltAgent/awesome-design-md/design-md/apple）标准落地与视觉升级。严格遵循单强调色 Action Blue (`#0066cc`)、单阴影硬件展台、17px 负字距正文、9999px 胶囊药丸与 0.95 按压缩放。
 
 ---
 
-## 一、本次迭代：Apple 官方设计系统全面重构
+## 一、本次迭代：Apple 官方设计系统 (DESIGN.md) 精确落地
 
-依据 `VoltAgent/awesome-design-md/design-md/apple` 的设计系统规范（DESIGN.md），对整个 Studio 前端进行了彻底重构：
+依据权威工业设计规范 `VoltAgent/awesome-design-md/design-md/apple`，对 Studio 前端进行了逐字逐行的系统重构：
 
-1. **色彩与质感体系 (Color Palette & Texture)**：
-   - **Action Blue (`#0066cc`)** 作为全局唯一的品牌交互基准色，所有主 CTA、链接、活动态统一收敛；
-   - **Sky Link Blue (`#2997ff`)** 作为深色表面的文本链接色；
-   - **Near-Black Ink (`#1d1d1f`)** 作为浅色底正文文本，取代死黑，营造印刷级摄影片质感；
-   - **Parchment (`#f5f5f7`)** 标志性 Apple 羊皮纸微暖浅灰，用于分镜叙事交替区块；
-   - **Surface Tile (`#161617` / `#242426`)** 纯正近黑展台展面；
-   - **UI 镀铬隐退（Receding Chrome）**：消除花哨渐变与厚重阴影，全站仅保留产品图像落在展台表面的那一道经典微柔阴影。
-2. **两级导航系统 (Two-Row Navigation)**：
-   - **44px Global Navigation**：毛玻璃半透磨砂黑底（`backdrop-filter: blur(20px)`），极简矢量微标与全局锚点链接；
-   - **52px Sub-Navigation**：悬浮吸顶栏，左侧产品标识与版本状态，右侧集成多版本切流胶囊（V3「墨」成片、V2 金属PBR、V1 路线验证、交互 Canvas）与主操作。
-3. **展台式影院视口 (Museum Pedestal Cinema Stage)**：
-   - 仿照 Apple Pro Display XDR 展台设计，大画幅无黑边超清放映；
-   - 浮动毛玻璃悬浮播控条：集成微步帧进（⏮/⏭）、高精度时间码（毫秒级）、绝对帧数标签、原速/慢速播放与单曲循环。
-4. **交替节奏板块 (Alternating Section Pulse)**：
-   - **Hero 影院展台** (`#000000`) ── **9 叙事 Beat 交互网格** (`#f5f5f7` Parchment，卡片仿 Apple Configurator 18px 圆角与 Hairline 边框，点按瞬间精确跳转) ── **6 项客观门禁与双质检审查** (`#161617` Dark Tile，大号数字规格排版) ── **全领域五大流派展片** (`#ffffff` Pure White) ── **Agent 导演中枢与实时终端** (`#161617`) ── **Apple 极简页脚** (`#f5f5f7`)。
+1. **色彩与质感体系 (Color Tokens)**：
+   - **Action Blue (`#0066cc`)** 作为全局唯一的品牌交互基准色，悬停为 `#0071e3`；
+   - **Sky Link Blue (`#2997ff`)** 作为深色表面的专用文字链接色；
+   - **Near-Black Ink (`#1d1d1f`)** 作为浅色底正文文本，杜绝死黑；
+   - **Parchment (`#f5f5f7`)** 标志性 Apple 羊皮纸微暖浅灰底色；
+   - **Surface Tile (`#272729` / `#2a2a2c` / `#000000`)** 极简暗灰硬件展台；
+   - **全系统杜绝引入第二种强调色**，严禁使用非物理装饰性渐变。
+2. **Apple 排印层级规范 (Typography Scale & Tracking)**：
+   - `hero-display`：56px / 600 / `-0.28px`；
+   - `display-lg`：40px / 600 / `0px`；
+   - `lead`：28px / 400 / `0.196px`；
+   - `tagline`：21px / 600 / `0.231px`；
+   - `body`：严格采用 **17px** / 400 / `-0.374px`（行高 1.47）；
+   - **严格避免使用 500 字重**，全站仅在 400 与 600 间建立鲜明对比；
+   - 页脚目录链接：14px / 400 / 行高 `2.41`，完美复刻 Apple 官网通透布局。
+3. **按钮语法与物理反馈 (Pill Button Architecture)**：
+   - 按钮圆角严格收敛为 `border-radius: 9999px`；
+   - 点按触发 Apple 真实物理按压缩放反馈：`transform: scale(0.95)`；
+   - 次级按钮采用 1px Action Blue 边框的 Ghost Pill。
+4. **单阴影绝对约束 (The Single Elevation Rule)**：
+   - 全系统禁止给卡片、按钮或普通面板添加 drop-shadow；
+   - **全站唯一合法的阴影**仅赋予置于深色展台上的主屏幕：`box-shadow: rgba(0, 0, 0, 0.22) 3px 5px 30px 0`，营造工业硬件悬浮沉浸感。
+5. **通栏交替画布节奏 (Full-Bleed Canvas Hierarchy)**：
+   - **Hero 影院展台** (`#000000`) ── **9 叙事 Beat 交互网格** (`#f5f5f7` Parchment，卡片仿 Apple Configurator 18px 圆角与 Hairline 边框，点按平滑跳转) ── **6 项客观门禁与双质检审查** (`#272729` Tile 1) ── **全领域五大流派展片** (`#ffffff` Pure White) ── **Agent 导演中枢与实时终端** (`#2a2a2c` Tile 2) ── **Apple 极简页脚** (`#f5f5f7`)。
 
 ---
 
@@ -48,13 +57,13 @@
 
 ---
 
-## 三、部署与上架指南
+## 三、部署与执行命令
 
 1. **一键启动 Studio**：
    ```bash
    npm start
    ```
-2. **测试门禁校验**：
+2. **运行客观门禁回归测试**：
    ```bash
    npm test
    ```
