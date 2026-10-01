@@ -1,5 +1,10 @@
-# 浓差电池 · 分场景配乐 + 实验室音效（依赖 ~/scorelib.py）
-import sys, os; sys.path.insert(0, os.path.expanduser('~')); from scorelib import *
+# 浓差电池 · 分场景配乐 + 实验室音效
+import os, sys
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(os.path.dirname(HERE))
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
+from bb.score import *
 T = 60.4; mus, sfx = buses(T)
 SEG = [0.8, 9.6, 21.45, 33.27, 43.31, 49.33]
 # 1 引入：好奇的钟琴动机 + 弦乐 + 玻璃轻碰 + 电压表
@@ -39,5 +44,6 @@ for j in range(12): add(sfx, 49.8 + j * 0.55, tick(0.8 - j * 0.05, 2600 - j * 10
 for j in range(8): add(mus, 49.6 + j * 0.85, piano([69, 67, 65, 64, 62, 60, 59, 60][j], 0.5, 3))
 add(mus, 56.8, timpani(36, 0.7)); chord_strings(56.8, 59.6, [36, 48, 55, 59, 64, 67], 0.85, 0.3, 1.2, 1.1)
 for m in [60, 64, 67, 71, 76]: add(mus, 56.8, piano(m, 0.6, 3.5))
-N = mus.shape[1]; v = load_voice(['narration/s%d.wav' % i for i in range(1, 7)], SEG, N)
-finish(mus, sfx, v, 'mix.wav')
+N = mus.shape[1]
+v = load_voice([os.path.join(HERE, 'narration', 's%d.flac' % i) for i in range(1, 7)], SEG, N)
+finish(mus, sfx, v, os.path.join(HERE, 'mix.wav'))

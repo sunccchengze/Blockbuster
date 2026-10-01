@@ -124,10 +124,15 @@ def reverb(x, dec=2.2, wet=0.28):
     return out
 
 def read_audio(p):
-    import subprocess
-    p = p.replace('.wav', '.flac')
-    raw = subprocess.run(['ffmpeg', '-v', 'error', '-i', p, '-f', 's16le', '-ac', '1', '-'], capture_output=True, check=True).stdout
-    info = subprocess.run(['ffmpeg', '-i', p], capture_output=True, text=True).stderr
+    import os, subprocess
+    from .media import ffmpeg
+    root, ext = os.path.splitext(p)
+    if ext == '.wav' and not os.path.isfile(p):
+        alt = root + '.flac'
+        if os.path.isfile(alt): p = alt
+    ff = ffmpeg()
+    raw = subprocess.run([ff, '-v', 'error', '-i', p, '-f', 's16le', '-ac', '1', '-'], capture_output=True, check=True).stdout
+    info = subprocess.run([ff, '-i', p], capture_output=True, text=True).stderr
     sr = int(re.search(r'(\d+) Hz', info).group(1))
     return np.frombuffer(raw, np.int16).astype(np.float32) / 32768, sr
 def load_voice(paths, delays, N):

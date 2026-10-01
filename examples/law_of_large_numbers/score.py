@@ -1,5 +1,10 @@
 # 大数定律 · 分场景配乐 + 同步音效
-import sys, os; sys.path.insert(0, os.path.expanduser('~')); from scorelib import *
+import os, sys
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(os.path.dirname(HERE))
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
+from bb.score import *
 T = 60.4; mus, sfx = buses(T)
 SEG = [0.8, 10.47, 18.97, 33.20, 42.99, 48.10]
 FIRST10 = [1, 0, 1, 1, 0, 1, 1, 1, 0, 1]
@@ -48,5 +53,6 @@ for j in range(10): add(mus, 48.3 + j * 0.9, piano([65, 69, 72, 67, 71, 74, 72, 
 for j in range(70): add(sfx, rng.uniform(52.0, 57.0), ping(rng.choice([2093, 2349, 2637, 3136, 3520]), 0.35), pan=rng.uniform(-.8, .8))
 add(mus, 57.4, timpani(36, 0.9)); chord_strings(57.4, 59.8, [36, 48, 55, 60, 64, 67, 72], 0.9, 0.2, 1.0, 1.2)
 for m in [60, 64, 67, 72, 76]: add(mus, 57.4, piano(m, 0.6, 3))
-N = mus.shape[1]; v = load_voice(['narration/s%d.wav' % i for i in range(1, 7)], SEG, N)
-finish(mus, sfx, v, 'mix.wav')
+N = mus.shape[1]
+v = load_voice([os.path.join(HERE, 'narration', 's%d.flac' % i) for i in range(1, 7)], SEG, N)
+finish(mus, sfx, v, os.path.join(HERE, 'mix.wav'))

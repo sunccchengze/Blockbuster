@@ -2,16 +2,15 @@
 import os, subprocess, shutil, re, sys, tempfile
 
 def ffmpeg():
-    """返回可用 ffmpeg 路径；沙箱会丢 ~/bin 与 pip 包，这里自动重装 imageio-ffmpeg 并链接。"""
+    """返回可用 ffmpeg。优先 BB_FFMPEG 和 PATH，否则用 imageio-ffmpeg 自带二进制。"""
+    env = os.environ.get('BB_FFMPEG')
+    if env and os.path.isfile(env): return env
     p = shutil.which('ffmpeg')
     if p: return p
     try: import imageio_ffmpeg
     except ImportError:
         subprocess.run([sys.executable, '-m', 'pip', 'install', '-q', 'imageio-ffmpeg'], check=True); import imageio_ffmpeg
-    exe = imageio_ffmpeg.get_ffmpeg_exe(); b = os.path.expanduser('~/bin'); os.makedirs(b, exist_ok=True)
-    link = os.path.join(b, 'ffmpeg')
-    if os.path.lexists(link): os.remove(link)
-    os.symlink(exe, link); os.environ['PATH'] = b + os.pathsep + os.environ['PATH']; return link
+    return imageio_ffmpeg.get_ffmpeg_exe()
 
 def render_parallel(film_path, out, jobs=2):
     """把一部片按帧切成 jobs 段并行渲染，再无损 concat。"""

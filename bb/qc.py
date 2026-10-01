@@ -7,13 +7,12 @@
 5. 成片：响度 −14±1 LUFS、峰值 ≤ −1 dBFS。
 """
 import os
-from fontTools.ttLib import TTCollection
 from PIL import ImageFont
-FONT = '/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc'
+from .fonts import cjk_font, cmap as font_cmap
 _cmap = None
 def cmap():
     global _cmap
-    if _cmap is None: _cmap = set(TTCollection(FONT).fonts[0].getBestCmap().keys())
+    if _cmap is None: _cmap = font_cmap(cjk_font(True))
     return _cmap
 
 def missing_glyphs(texts):
@@ -43,7 +42,7 @@ def check_film(film, sample_every=1.0, out_dir=None):
         t += sample_every; n += 1
     texts = set(film.all_text()) | R.TEXT_LOG
     for ch, ctx in missing_glyphs(texts).items(): issues.append(f'缺字形 {ch!r} (U+{ord(ch):04X}) 出现在：{ctx}')
-    f = ImageFont.truetype(FONT, film.sub_size)
+    f = ImageFont.truetype(cjk_font(True), film.sub_size)
     for k, seg in enumerate(film.subs):
         for a, b, s in seg:
             w = f.getlength(s)

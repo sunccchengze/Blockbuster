@@ -1,8 +1,10 @@
 // 波尔共振仪 · Bohr Resonance — deterministic f(t) renderer (Blockbuster protocol)
-const { createCanvas, GlobalFonts } = require('/home/user/Blockbuster/node_modules/@napi-rs/canvas');
+const path = require('path');
+const { canvas, fontFile, ffmpegBin } = require(path.join(__dirname, '../../tools/node_env.js'));
+const { createCanvas, GlobalFonts } = canvas();
 const { spawn } = require('child_process');
-GlobalFonts.registerFromPath('/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc', 'CJK');
-GlobalFonts.registerFromPath('/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc', 'CJKB');
+GlobalFonts.registerFromPath(fontFile(false), 'CJK');
+GlobalFonts.registerFromPath(fontFile(true), 'CJKB');
 const W = 1280, H = 720, FPS = 24, DUR = 60.4;
 const FONT = '"CJK"', FONTB = '"CJKB"';
 
@@ -314,7 +316,7 @@ if (require.main === module) {
   process.chdir(__dirname);
   const mode = process.argv[2] || 'video'; const cv = createCanvas(W, H), ctx = cv.getContext('2d');
   if (mode === 'still') { const fs = require('fs'); for (const t of process.argv.slice(3).map(Number)) { render(ctx, t); fs.writeFileSync(`still_${t}.png`, cv.toBuffer('image/png')); } return; }
-  const ff = spawn(process.env.HOME + '/bin/ffmpeg', ['-y', '-v', 'error', '-f', 'rawvideo', '-pix_fmt', 'rgba', '-s', `${W}x${H}`, '-r', `${FPS}`, '-i', '-', '-i', 'mix.wav', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '18', '-preset', 'medium', '-c:a', 'aac', '-b:a', '192k', '-shortest', '-movflags', '+faststart', 'bohr_resonance.mp4'], { stdio: ['pipe', 'inherit', 'inherit'] });
+  const ff = spawn(ffmpegBin(), ['-y', '-v', 'error', '-f', 'rawvideo', '-pix_fmt', 'rgba', '-s', `${W}x${H}`, '-r', `${FPS}`, '-i', '-', '-i', 'mix.wav', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '18', '-preset', 'medium', '-c:a', 'aac', '-b:a', '192k', '-shortest', '-movflags', '+faststart', 'bohr_resonance.mp4'], { stdio: ['pipe', 'inherit', 'inherit'] });
   (async () => { const N = Math.round(DUR * FPS);
     for (let f = 0; f < N; f++) { render(ctx, f / FPS); const a = ctx.getImageData(0, 0, W, H).data; render(ctx, f / FPS + 0.25 / FPS); const b = ctx.getImageData(0, 0, W, H).data;
       const out = Buffer.alloc(a.length); for (let i = 0; i < a.length; i++) out[i] = (a[i] + b[i] + 1) >> 1; if (!ff.stdin.write(out)) await new Promise(r => ff.stdin.once('drain', r)); }

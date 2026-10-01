@@ -1,5 +1,10 @@
 # 波尔共振 · 分场景配乐 + 与摆轮周期同步的音效
-import sys, os; sys.path.insert(0, os.path.expanduser('~')); from scorelib import *
+import os, sys
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(os.path.dirname(HERE))
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
+from bb.score import *
 T = 60.4; mus, sfx = buses(T)
 SEG = [0.8, 9.8, 21.78, 31.83, 41.78, 50.49]; T0 = 1.6
 # 1 仪器结构：机械钟表滴答 + 低音弦乐悬念 + 扭转"吱"声
@@ -50,5 +55,6 @@ for j in range(3): add(mus, 50.8 + j * 1.8, whoosh(1.6, 400, 3500, 0.3))
 for j in range(9): add(mus, 50.7 + j * 0.7, bell([72, 76, 79, 84, 79, 76, 81, 84, 88][j], 0.35), pan=(j % 3 - 1) * 0.4)
 add(mus, 57.3, timpani(36, 0.9)); chord_strings(57.3, 59.8, [36, 48, 55, 60, 64, 67], 0.9, 0.2, 1.0, 1.2)
 for m in [60, 64, 67, 72]: add(mus, 57.3, piano(m, 0.6, 3))
-N = mus.shape[1]; v = load_voice(['narration/s%d.wav' % i for i in range(1, 7)], SEG, N)
-finish(mus, sfx, v, 'mix.wav')
+N = mus.shape[1]
+v = load_voice([os.path.join(HERE, 'narration', 's%d.flac' % i) for i in range(1, 7)], SEG, N)
+finish(mus, sfx, v, os.path.join(HERE, 'mix.wav'))

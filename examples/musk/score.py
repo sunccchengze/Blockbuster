@@ -1,8 +1,11 @@
 # 分场景配乐 + 同步音效（弦乐 / 钢琴 / 定音鼓 / 鼓组 / 氛围音效），跟随 r3d.py 的时间线
 import sys, os
-HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, os.path.dirname(os.path.dirname(HERE))); sys.path.insert(0, HERE)
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(os.path.dirname(HERE))
+if ROOT not in sys.path: sys.path.insert(0, ROOT)
+if HERE not in sys.path: sys.path.insert(0, HERE)
 import film as r3d                      # 时间线（段落起点、字幕锚点）直接取自 film.py，声画同源
-ASSETS = os.environ.get('MUSK_ASSETS', os.path.expanduser('~/musk'))   # 旁白 narration/s1–s8.flac 所在目录
+ASSETS = os.environ.get('MUSK_ASSETS', HERE)   # 旁白 narration/s1–s8.flac 所在目录，默认就在本目录
 from bb.score import *
 T = r3d.TOTAL
 mus, sfx = buses(T)
@@ -180,5 +183,5 @@ for m in [60, 64, 67, 72, 76]: add(mus, tend - 2.0, piano(m, 0.7, 4))
 # 转场淡入淡出由场景本身承担：此处不再加刺耳转场音
 # ---------- 混响 + 人声闪避 → mix.wav ----------
 voice = load_voice([os.path.join(ASSETS, f'narration/s{i}.flac') for i in range(1, 9)], S, mus.shape[1])
-finish(mus, sfx, voice, 'mix.wav')
+finish(mus, sfx, voice, os.path.join(HERE, 'mix.wav'))
 print('mix.wav ok', T)

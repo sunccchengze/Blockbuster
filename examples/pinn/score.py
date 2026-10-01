@@ -1,5 +1,10 @@
 # PINN · 分场景配乐 + 科技音效
-import sys, os; sys.path.insert(0, os.path.expanduser('~')); from scorelib import *
+import os, sys
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(os.path.dirname(HERE))
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
+from bb.score import *
 T = 60.4; mus, sfx = buses(T)
 SEG = [0.8, 12.48, 20.42, 32.13, 42.60, 48.01]
 # 1 引入：标题钟琴重音 + 电子琶音 + 10 个数据点"哔"
@@ -43,5 +48,6 @@ while t < 57.6: add(mus, t, pluck([62, 65, 69, 74][i % 4] + 12, 0.45), pan=0.4 *
 for j in range(60): add(sfx, 49.0 + j * 0.14, tick(0.3, 3200))
 add(mus, 57.8, timpani(38, 0.9)); chord_strings(57.8, 60.0, [38, 50, 57, 62, 66, 69], 0.9, 0.1, 1.0, 1.2)
 for m in [62, 66, 69, 74]: add(mus, 57.8, bell(m + 12, 0.5))
-N = mus.shape[1]; v = load_voice(['narration/s%d.wav' % i for i in range(1, 7)], SEG, N)
-finish(mus, sfx, v, 'mix.wav')
+N = mus.shape[1]
+v = load_voice([os.path.join(HERE, 'narration', 's%d.flac' % i) for i in range(1, 7)], SEG, N)
+finish(mus, sfx, v, os.path.join(HERE, 'mix.wav'))

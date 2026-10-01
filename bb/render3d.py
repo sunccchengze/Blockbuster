@@ -62,7 +62,9 @@ def disc(r, h, col): V, F = lathe([(0,0),(r,0),(r,h),(0,h)], 20); return part(V,
 # ---------------- frame / drawing ----------------
 def font(sz, bold=True, _c={}):
     k = (int(sz), bold)
-    if k not in _c: _c[k] = ImageFont.truetype('/usr/share/fonts/opentype/noto/NotoSansCJK-%s.ttc' % ('Bold' if bold else 'Regular'), int(sz))
+    if k not in _c:
+        from .fonts import cjk_font
+        _c[k] = ImageFont.truetype(cjk_font(bold), int(sz))
     return _c[k]
 rng = np.random.default_rng(7)
 STARS = np.array([nrm(v) for v in rng.normal(size=(700, 3))]) * 600
