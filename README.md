@@ -1,115 +1,116 @@
-# BLOCKBUSTER: 通用端到端代码驱动视频生产流水线
+# Blockbuster
 
-> **输入任意需求，流水线现场自主制作视频。**  
-> 这不是单一的固定 Demo，而是一个可持续运转的工业级代码驱动视频生成流水线（Universal Prompt-to-Video Pipeline）。  
-> 任意自然语言需求输入 ➔ 意图解构与类型学标定 ➔ 6 阶段动态分镜编剧 ➔ 程序化场景逻辑编译 ➔ 物理声学定制合成 ➔ 180° 快门光流渲染 ➔ MP4 真实抽帧双轨质检，12 秒内极速交付！
+用代码做讲解视频的工具箱。画面由程序逐帧渲染，配乐由程序合成，旁白是事先录好的 FLAC。
 
----
+没有“输入一句话、12 秒出片”的通用流水线。那套按关键词套模板的管线已经废弃，不在当前代码里，也不要恢复。每部片都要单独研究、写场景、写配乐。仓库提供可复用的零件和制作规范（[`skills/blockbuster/SKILL.md`](skills/blockbuster/SKILL.md)）。
 
-## 30 秒看流水线与在线 Studio
-
-| 交互形态 | 说明与操作指引 |
-|---|---|
-| 🖥 **Universal Web Studio** | 运行 `npm start` -> 浏览器访问 `http://localhost:3000`，内置需求生成输入框、5 阶段动态步进器、实时影院展台、分镜节拍网格、双轨客观质检单与历史生成清单 |
-| ⚡ **命令行一键制作 (CLI)** | `npm run generate -- --prompt "制作一个未来科幻风格的量子计算芯片发布会视频"` |
-| 🎬 **当前生成成片** | 1280×720 · 24fps · 180° 快门运动模糊 · 48kHz 物理建模立体声 · H.264+AAC，保存在 `public/generated/` |
-| 🎞 **真实抽帧印相质检** | 从已编码的真实 MP4 中抽取 6 节拍关键帧合成 1920×1200 接触单，验证视觉内容真实落地 |
-| 🔊 **EBU R128 声学六门禁** | 离散物理琴弦 + 空间共鸣腔 + 动态母带压限，**6/6 项客观指标 100% 自动化通过** |
-| 🧠 **全领域通用导演技能** | [`skills/blockbuster/SKILL.md`](skills/blockbuster/SKILL.md) — 涵盖科技、宇宙、工业硬件、数据金融、写意美学五大领域的通用工业协议 |
-
----
-
-## 一、通用流水线生产全流程 (5-Stage Architecture)
+## 目录
 
 ```
-                       [ 用户输入创意需求 (Natural Language Prompt) ]
-                                            │
-                                            ▼
-                    ┌─────────────────────────────────────────────────┐
-                    │ Stage 1: 意图解构与影视类型学标定 (Director)     │
-                    │ - 自动识别科幻、深空、工业硬件、数据大屏、写意   │
-                    │ - 提取配色规范、运镜逻辑与声学预设              │
-                    └───────────────────────┬─────────────────────────┘
-                                            │
-                                            ▼
-                    ┌─────────────────────────────────────────────────┐
-                    │ Stage 2: 动态 6 阶段叙事分镜编剧 (Storyboard)     │
-                    │ - 起势 ➔ 升维 ➔ 奔涌 ➔ 破界 ➔ 铭刻 ➔ 归寂        │
-                    │ - 输出精确到毫秒的时间码与动作焦点清单          │
-                    └───────────────┬─────────────────┬───────────────┘
-                                    │                 │
-                ┌───────────────────┘                 └───────────────────┐
-                ▼                                                         ▼
-┌──────────────────────────────────────┐        ┌──────────────────────────────────────┐
-│ Stage 3: 程序化定制物理声学合成       │        │ Stage 4: 编译程序化视觉场景渲染逻辑  │
-│ - Karplus-Strong 离散物理琴弦仿真    │        │ - 纯函数 f(t, ctx, canvas) 求值      │
-│ - 电影级 Braam 重音、冲音与金石印泥  │        │ - 三维空间投影、流形粒子、光流管道   │
-│ - 工业母带压限 (-14 LUFS, -1.2 dBTP) │        │ - 180° 快门时间积分多子样运动模糊    │
-│ - 自动化通过 6 项客观声学门禁        │        │ - 内存 IPC Buffer 直推 FFmpeg stdin   │
-└──────────────────┬───────────────────┘        └──────────────────┬───────────────────┘
-                   │                                               │
-                   └───────────────────────┬───────────────────────┘
-                                           │
-                                           ▼
-                    ┌─────────────────────────────────────────────────┐
-                    │ Stage 5: 双轨质检认证与交付清单输出 (Delivery)   │
-                    │ - 从最终 MP4 真实抽帧合成 1920×1200 质检接触单   │
-                    │ - 输出 1280×720 H.264 + 48kHz AAC 封装 MP4      │
-                    │ - 生成全量交付参数清单 manifest.json            │
-                    └─────────────────────────────────────────────────┘
+bb/                          Python 工具包
+  render3d.py                3D 引擎：相机、网格、光照、字幕、3D 标签
+  assets.py                  低多边形模型
+  timeline.py                按实测旁白时长建时间线
+  score.py                   配乐和音效
+  media.py                   ffmpeg、并行渲染、换音轨
+  qc.py                      内容质检
+  fonts.py                   中文字体查找
+examples/
+  musk/                      三分钟人物传记（Python 3D，film.py）
+  concentration_cell/        浓差电池（旧版 node 场景 scene.js + score.py）
+  law_of_large_numbers/      大数定律
+  bohr_resonance/            波尔共振
+  pinn/                      PINN
+  每个样例的 narration/*.flac 是旁白，入库，用来重建
+skills/blockbuster/SKILL.md  制作规范
+tools/                       ensure_ff.sh、node 场景的字体/ffmpeg 查找、旧场景重建脚本
+MEMORY.md                    经验、坑、用户偏好
 ```
 
----
+成片 mp4 不进 git。下载地址：[Release `films-2026-09-30`](https://github.com/sunccchengze/Blockbuster/releases/tag/films-2026-09-30)。
 
-## 二、快速上手与使用指南
+完整克隆仍会下载历史里的旧演示和 zip。当前版本不再包含这些文件。只要现在的代码，用浅克隆：`git clone --depth 1`。
 
-### 1. 命令行快速生成 (CLI)
-只需一条指令，传入任意视频需求：
+## 安装
+
+Python 3.9+。在仓库根目录：
+
 ```bash
-# 案例 A：未来科幻量子芯片
-npm run generate -- --prompt "制作一个未来科幻风格的量子计算芯片发布会视频，微观粒子汇聚至宏观芯片定格"
-
-# 案例 B：深空宇宙天体物理
-npm run generate -- --prompt "制作一个深空宇宙黑洞与超新星大爆炸的天体物理科普短片，粒子引力坍缩"
-
-# 案例 C：工业硬件腕表展示
-npm run generate -- --prompt "极简北欧风的智能硬件手表工业设计与精密旋转展示，极简高光金属质感"
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
 ```
-流水线自动执行 5 个阶段并在 12 秒内输出成片与接触单。
 
-### 2. 启动生产级 Web 工作台 (Apple Design System)
+中文字体是 Noto Sans CJK。Debian/Ubuntu：
+
 ```bash
-npm start
+sudo apt install fonts-noto-cjk
 ```
-- 服务自动监听 `http://0.0.0.0:3000`；
-- 在顶部文本框中输入任意创意需求，或点击推荐预设；
-- 点击 **“立即运行流水线制作视频”**，实时观察阶段进度条与 SSE 日志总线；
-- 制作完成后播放器自动载入成片，支持 24fps 逐帧微步、9 宫格印相质检与 WAV 母带下载。
 
-### 3. 运行客观门禁回归测试
+没有系统包时，把字体目录指给 `BB_FONT_DIR`。目录里要有下面任一命名：
+
+- `NotoSansCJK-Bold.ttc` 和 `NotoSansCJK-Regular.ttc`
+- `NotoSansCJKsc-Bold.otf` 和 `NotoSansCJKsc-Regular.otf`
+
+也可以分别设置 `BB_FONT_BOLD`、`BB_FONT_REGULAR`。
+
+ffmpeg 不必单独安装。`bb` 会用 PATH 里的 ffmpeg，或 `imageio-ffmpeg` 自带的二进制。也可以设置 `BB_FFMPEG`。
+
+四个旧 node 场景还需要：
+
 ```bash
-npm test
+npm install
 ```
-自动执行 EBU R128 六项声学门禁检测（积分响度、真实峰值、动态范围 LRA、直流偏置、频谱分布、声画同步）。
 
----
+依赖是 `@napi-rs/canvas`。想把 ffmpeg 放进当前 shell 的 PATH，可以 `source tools/ensure_ff.sh`（必须 source，不要直接执行）。
 
-## 三、全领域流派覆盖矩阵 (All-Domain Engines)
+## 快速上手
 
-| 领域分类 | 典型应用场景 | 视觉图层与几何算法 | 定制声学配方 |
+在仓库根目录、已激活虚拟环境时：
+
+```bash
+python3 -m bb still examples/musk/film.py 30
+python3 -m bb qc examples/musk/film.py
+python3 examples/concentration_cell/score.py
+```
+
+- `still` 把指定秒的静帧写到当前目录，文件名带时间后缀，避免读图缓存。
+- `qc` 不传成片时，只检查字形、字幕和文字出画/重叠，不检查响度。
+- `score.py` 把混音写到该样例目录的 `mix.wav`（已在 `.gitignore` 里）。
+
+其他命令：
+
+```bash
+python3 -m bb render examples/musk/film.py out.mp4 --jobs 2
+python3 -m bb remux video.mp4 mix.wav
+python3 -m bb qc examples/musk/film.py out.mp4
+```
+
+`render` 和带成片的 `qc` 会比较慢。这台机器按 2 核估算，马斯克整片大约几分钟，不是几秒。
+
+## 重建每部片
+
+旁白已经在 `examples/<name>/narration/`。成片默认写在样例目录里，不入库。
+
+| 样例 | 成片文件名 | 命令 | 说明 |
 |---|---|---|---|
-| **未来科幻 / 量子** | 芯片发布会、算力架构、AI 概念 | 粒子引力坍缩、超导晶格多边形、HUD 极简时间码 | 冲音 Riser + 45Hz Braam + 晶体琶音 |
-| **深空宇宙 / 天体** | 黑洞引力透镜、超新星爆发、星际穿梭 | 动态流形粒子云、环形冲击光环、空间卷绕 | 次低频引力沉降 + 宇宙空谷音 + 冲击顿音 |
-| **工业三维 / 硬件** | 智能硬件、极简钟表、工业器械 | 镜面高光金属反射、轴心精密旋转、展台微阴影 | 金属高质感轻击 + 气压阀 Whoosh + 纯净单音 |
-| **数据智能 / 金融** | 拓扑流形大屏、区块链流向、交易量 | 连续参数化贝塞尔曲面、数据点阵连线 | 8 分音符快速物理拨弦 + 数字微滴答 |
-| **东方美学 / 写意** | 水墨山水、狂草书法、金石印章 | 分形水晕毛细渗透、枯笔飞白、宣纸微观纤维 | 扩展 Karplus-Strong 离散物理琴弦 + 印泥金石回弹 |
+| musk | `musk_3min.mp4` | `bash examples/musk/build.sh` | Python 3D。渲染、混音、封装、质检 |
+| concentration_cell | `concentration_cell_nernst.mp4` | `bash examples/concentration_cell/build.sh` | node 场景，需要 `npm install` |
+| law_of_large_numbers | `law_of_large_numbers.mp4` | `bash examples/law_of_large_numbers/build.sh` | 同上 |
+| bohr_resonance | `bohr_resonance.mp4` | `bash examples/bohr_resonance/build.sh` | 同上 |
+| pinn | `pinn_explained.mp4` | `bash examples/pinn/build.sh` | 同上。画面读 `train_data.json`，不必重训 |
 
----
+只换音轨、不重渲画面：
 
-## 四、工程约束与工业铁律
+```bash
+python3 examples/<name>/score.py
+python3 -m bb remux 成片.mp4 examples/<name>/mix.wav
+```
 
-1. **确定性高于一切**：渲染逻辑必须由纯函数 $f(t)$ 求值，带种子 PRNG（Mulberry32），严禁隐式依赖系统物理时钟；
-2. **零磁盘 IO 损耗**：严格采用内存 IPC Buffer 直推 FFmpeg stdin，严禁中间小碎图落盘；
-3. **真实抽帧闭环**：拒绝仅在内存中做表面验证，必须从编码完成的二进制 MP4 中反抽帧拼贴 1920×1200 接触单；
-4. **声画物理一体化**：离散物理乐器算法现场计算音频，严格通过 EBU R128 标准，绝不外挂劣质现成罐头音效；
-5. **版本交接自同步**：每一次 push 自动更新 `HANDOFF.md`，长效固化 `MEMORY.md`。
+旧的 `music.js`、`scorelib.py`、`remux.sh` 已删除。配乐用 `bb.score`，换音轨用 `python3 -m bb remux`。
+
+## 新片
+
+按 [`skills/blockbuster/SKILL.md`](skills/blockbuster/SKILL.md)。要点：标准普通话，只用 voice-01；旁白里不要写希腊字母符号；必须有真正的 3D 场景和逐句字幕；配乐跟画面走。这个仓库不包含 TTS，新旁白要在外面用 voice-01 生成后再放进 `narration/`。
+
+交付前 `python3 -m bb qc` 必须是 0 问题，并且要看接触单和关键帧。qc 查的是字形、版面、字幕时长和（有成片时）响度，不代替看图。
