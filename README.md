@@ -17,7 +17,7 @@ bb/                          Python 工具包
   fonts.py                   中文字体查找
 examples/
   musk/                      三分钟人物传记（Python 3D，film.py）
-  concentration_cell/        浓差电池（旧版 node 场景 scene.js + score.py）
+  concentration_cell/        浓差电池（Node 场景 scene.js + score.py）
   law_of_large_numbers/      大数定律
   bohr_resonance/            波尔共振
   pinn/                      PINN
@@ -27,9 +27,19 @@ tools/                       ensure_ff.sh、node 场景的字体/ffmpeg 查找�
 MEMORY.md                    经验、坑、用户偏好
 ```
 
-成片 mp4 不进 git。Release 标签 [`films-2026-09-30`](https://github.com/sunccchengze/Blockbuster/releases/tag/films-2026-09-30) 已经建好，但五个 mp4 还没挂上去：这台环境连不上 `uploads.github.com`。文件仍在历史提交 `08b26af` 的 `.zip` 里，补传命令写在该 Release 的说明里。
+五部成片均以普通 Git 文件保存在各自的 `examples/<name>/` 目录中（每个文件都小于 100 MB，不使用 Git LFS）。渲染过程中产生的临时 mp4 仍由 `.gitignore` 忽略。
 
-完整克隆仍会下载历史里的旧演示和 zip。当前版本不再包含这些文件。只要现在的代码，用浅克隆：`git clone --depth 1`。
+## 成片一览
+
+| 样例 | 成片文件 | 时长 | 简介 |
+|---|---|---:|---|
+| 浓差电池 | [`concentration_cell_nernst.mp4`](examples/concentration_cell/concentration_cell_nernst.mp4) | 约 62 秒 | 用铜电极浓差电池讲解能斯特方程；0.059 V 明确标为理想溶液理论模拟值，非实验实测。 |
+| 大数定律 | [`law_of_large_numbers.mp4`](examples/law_of_large_numbers/law_of_large_numbers.mp4) | 60.4 秒 | 从硬币试验、频率收敛到切比雪夫界与蒙特卡洛估算。 |
+| 波尔共振 | [`bohr_resonance.mp4`](examples/bohr_resonance/bohr_resonance.mp4) | 60.4 秒 | 用数值仿真展示阻尼、受迫振动、共振和相位差。 |
+| PINN | [`pinn_explained.mp4`](examples/pinn/pinn_explained.mp4) | 60.4 秒 | 以阻尼振子对比普通神经网络与物理信息神经网络。 |
+| 马斯克 | [`musk_3min.mp4`](examples/musk/musk_3min.mp4) | 3:14 | 以 3D 时间线讲述人物经历与相关公司；事实截至 2026-09-30。 |
+
+历史提交仍包含旧演示和压缩包，因此完整克隆会下载较多历史对象。只需要当前代码时可浅克隆：`git clone --depth 1`。
 
 ## 安装
 
@@ -90,7 +100,7 @@ python3 -m bb qc examples/musk/film.py out.mp4
 
 ## 重建每部片
 
-旁白已经在 `examples/<name>/narration/`。成片默认写在样例目录里，不入库。
+旁白已经在 `examples/<name>/narration/`，成片也保存在对应样例目录并入库。重新渲染产生的临时 mp4 由 `.gitignore` 忽略。
 
 | 样例 | 成片文件名 | 命令 | 说明 |
 |---|---|---|---|

@@ -10,7 +10,7 @@
 | PINN（数据 + 残差，20000 步） | 0.004 |
 | 反问题 PINN：μ 可训练 | μ 估计 4.20（真值 4） |
 
-- 成片：`pinn_explained.mp4`（1280×720 · 24fps · 60.4s）。不在 git 里。Release 标签 [`films-2026-09-30`](https://github.com/sunccchengze/Blockbuster/releases/tag/films-2026-09-30) 已建，但附件还没传上去；原片在历史提交 `08b26af` 的 `.zip` 里。这次整理没有重渲，也没有试听。
+- 成片：`pinn_explained.mp4`（1280×720 · 24fps · 60.4s），与源码一同保存在本目录并入库。
 - 旁白：`narration/s1.flac`–`s6.flac`（voice-01）
 - 重建：`bash examples/pinn/build.sh`
 - 重新训练：`python3 train.py`（需要 torch，大约 1.5 分钟；这次整理没有重跑）

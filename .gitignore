@@ -3,6 +3,11 @@ node_modules/
 __pycache__/
 *.tmp
 *.mp4
+!examples/concentration_cell/concentration_cell_nernst.mp4
+!examples/law_of_large_numbers/law_of_large_numbers.mp4
+!examples/bohr_resonance/bohr_resonance.mp4
+!examples/pinn/pinn_explained.mp4
+!examples/musk/musk_3min.mp4
 *.wav
 still_*.png
 qc_*.png
