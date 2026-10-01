@@ -5,8 +5,8 @@ ROOT = os.path.dirname(os.path.dirname(HERE))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 from bb.score import *
-T = 60.4; mus, sfx = buses(T)
-SEG = [0.8, 9.6, 21.45, 33.27, 43.31, 49.33]
+T = 62.0; mus, sfx = buses(T)
+SEG = [0.8, 9.6, 21.45, 33.27, 43.31, 50.73]
 # 1 引入：好奇的钟琴动机 + 弦乐 + 玻璃轻碰 + 电压表
 chord_strings(0.0, 4.8, Cmaj7, 0.55, 1.5, 0.8, 1.0); chord_strings(4.8, 9.6, Am7, 0.55, 0.8, 0.8, 1.0)
 for i, m in enumerate([72, 76, 79, 83, 81, 79, 76, 74]): add(mus, 0.3 + i * 0.55, bell(m, 0.5), pan=(i % 3 - 1) * 0.4)
@@ -39,11 +39,11 @@ add(mus, 47.4, timpani(36, 1.0)); add(mus, 47.4, kick(0.8)); chord_strings(47.4,
 for m in [72, 76, 79, 84]: add(mus, 47.4, bell(m, 0.5))
 add(sfx, 47.5, beep(1760, 0.1)); add(sfx, 47.7, beep(2093, 0.14))
 # 6 放电至平衡：渐缓渐静 + 电压下降滴答 + 结尾大和弦
-prog(49.33, 56.5, [Fmaj7, Em7, Dm7], lambda a, b_, c: chord_strings(a, b_, c, 0.55, 0.8, 0.8, 0.8))
-for j in range(12): add(sfx, 49.8 + j * 0.55, tick(0.8 - j * 0.05, 2600 - j * 100))
-for j in range(8): add(mus, 49.6 + j * 0.85, piano([69, 67, 65, 64, 62, 60, 59, 60][j], 0.5, 3))
-add(mus, 56.8, timpani(36, 0.7)); chord_strings(56.8, 59.6, [36, 48, 55, 59, 64, 67], 0.85, 0.3, 1.2, 1.1)
-for m in [60, 64, 67, 71, 76]: add(mus, 56.8, piano(m, 0.6, 3.5))
+prog(50.73, 57.9, [Fmaj7, Em7, Dm7], lambda a, b_, c: chord_strings(a, b_, c, 0.55, 0.8, 0.8, 0.8))
+for j in range(12): add(sfx, 51.2 + j * 0.55, tick(0.8 - j * 0.05, 2600 - j * 100))
+for j in range(8): add(mus, 51.0 + j * 0.85, piano([69, 67, 65, 64, 62, 60, 59, 60][j], 0.5, 3))
+add(mus, 58.2, timpani(36, 0.7)); chord_strings(58.2, 61.0, [36, 48, 55, 59, 64, 67], 0.85, 0.3, 1.2, 1.1)
+for m in [60, 64, 67, 71, 76]: add(mus, 58.2, piano(m, 0.6, 3.5))
 N = mus.shape[1]
 v = load_voice([os.path.join(HERE, 'narration', 's%d.flac' % i) for i in range(1, 7)], SEG, N)
 finish(mus, sfx, v, os.path.join(HERE, 'mix.wav'))
