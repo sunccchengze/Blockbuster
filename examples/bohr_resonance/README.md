@@ -2,7 +2,7 @@
 
 画面是 `scene.js`，配乐是 `score.py`。摆轮运动由 RK4 数值积分求解 θ'' + 2βθ' + ω₀²θ = ω₀²θd(t)（T₀ = 1.6 s）。画面、曲线、读数来自同一组仿真数据。
 
-- 成片：`bohr_resonance.mp4`（1280×720 · 24fps · 60.4s）。不在 git 里，在 [Release `films-2026-09-30`](https://github.com/sunccchengze/Blockbuster/releases/tag/films-2026-09-30)。交付时记录约 −14.6 LUFS / −1.7 dBTP。这次整理没有重渲，也没有试听。
+- 成片：`bohr_resonance.mp4`（1280×720 · 24fps · 60.4s）。不在 git 里。Release 标签 [`films-2026-09-30`](https://github.com/sunccchengze/Blockbuster/releases/tag/films-2026-09-30) 已建，但附件还没传上去；原片在历史提交 `08b26af` 的 `.zip` 里。交付时记录约 −14.6 LUFS / −1.7 dBTP。这次整理没有重渲，也没有试听。
 - 旁白：`narration/s1.flac`–`s6.flac`（voice-01）
 - 重建：`bash examples/bohr_resonance/build.sh`
 

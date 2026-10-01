@@ -27,7 +27,7 @@ tools/                       ensure_ff.sh、node 场景的字体/ffmpeg 查找�
 MEMORY.md                    经验、坑、用户偏好
 ```
 
-成片 mp4 不进 git。下载地址：[Release `films-2026-09-30`](https://github.com/sunccchengze/Blockbuster/releases/tag/films-2026-09-30)。
+成片 mp4 不进 git。Release 标签 [`films-2026-09-30`](https://github.com/sunccchengze/Blockbuster/releases/tag/films-2026-09-30) 已经建好，但五个 mp4 还没挂上去：这台环境连不上 `uploads.github.com`。文件仍在历史提交 `08b26af` 的 `.zip` 里，补传命令写在该 Release 的说明里。
 
 完整克隆仍会下载历史里的旧演示和 zip。当前版本不再包含这些文件。只要现在的代码，用浅克隆：`git clone --depth 1`。
 
