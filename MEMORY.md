@@ -25,7 +25,7 @@
 
 ## 样例
 
-旁白在 `examples/<name>/narration/*.flac`，入库。成片在 GitHub Release `films-2026-09-30`，不入库。
+旁白在 `examples/<name>/narration/*.flac`，入库。成片不入库。Release 标签 `films-2026-09-30` 已建，但 mp4 附件没传上去（`uploads.github.com` 连不上）。原片还在提交 `08b26af` 的 `.zip` 里。
 
 | 样例 | 时长 | 重建 |
 |---|---|---|
@@ -70,6 +70,7 @@
 - `python3 -m bb qc examples/musk/film.py`：输出 `QC 通过：无缺字形 / 字幕问题`。这条命令不传成片，所以没有检查响度，也没有接触单。
 - `python3 examples/concentration_cell/score.py`：写出 60.4 秒、48 kHz、立体声 `mix.wav`，峰值不是 0。没有听。
 - `node examples/concentration_cell/scene.js still 12`：在 `npm install` 之后能出静帧。没有重渲整片。
+- Release `films-2026-09-30` 已创建，但 `gh release upload` 连不上 `uploads.github.com`，mp4 附件是 0 个。
 
 ## 可改进
 

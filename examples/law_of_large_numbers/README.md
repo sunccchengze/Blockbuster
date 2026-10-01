@@ -2,7 +2,7 @@
 
 画面是 `scene.js`，配乐是 `score.py`。制作经验见 `../concentration_cell/LESSONS.md`（其中的旧路径已过时）。
 
-- 成片：`law_of_large_numbers.mp4`（1280×720 · 24fps · 60.4s）。不在 git 里，在 [Release `films-2026-09-30`](https://github.com/sunccchengze/Blockbuster/releases/tag/films-2026-09-30)。交付时记录约 −14.3 LUFS / −1.8 dBTP。这次整理没有重渲，也没有试听。
+- 成片：`law_of_large_numbers.mp4`（1280×720 · 24fps · 60.4s）。不在 git 里。Release 标签 [`films-2026-09-30`](https://github.com/sunccchengze/Blockbuster/releases/tag/films-2026-09-30) 已建，但附件还没传上去；原片在历史提交 `08b26af` 的 `.zip` 里。交付时记录约 −14.3 LUFS / −1.8 dBTP。这次整理没有重渲，也没有试听。
 - 旁白：`narration/s1.flac`–`s6.flac`（voice-01）
 - 重建：`bash examples/law_of_large_numbers/build.sh`
 

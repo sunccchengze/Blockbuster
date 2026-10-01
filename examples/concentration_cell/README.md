@@ -4,7 +4,7 @@
 
 ## 成片
 
-- `concentration_cell_nernst.mp4`：1280×720 · 24 fps · 60.4 s。不在 git 里，在 [Release `films-2026-09-30`](https://github.com/sunccchengze/Blockbuster/releases/tag/films-2026-09-30)。
+- `concentration_cell_nernst.mp4`：1280×720 · 24 fps · 60.4 s。不在 git 里。Release 标签 [`films-2026-09-30`](https://github.com/sunccchengze/Blockbuster/releases/tag/films-2026-09-30) 已建，但附件还没传上去；原片在历史提交 `08b26af` 的 `.zip` 里。
 - 中文普通话配音（voice-01）+ 字幕，写实实验室，面向大学物理化学。
 - 交付时测过的响度约 −14.4 LUFS，真峰值 −1.7 dBTP。这次整理没有重渲，也没有试听。
 
