@@ -1,8 +1,10 @@
 # 大数定律 · 60 秒 3D 教学动画
-沿用浓差电池项目的管线（见 ../concentration_cell/LESSONS.md）：同一配音 voice-01、确定性渲染、电钢琴配乐 + 侧链闪避。
 
-- 成片：`law_of_large_numbers.mp4`（1280×720 · 24fps · 60.4s · −14.3 LUFS / −1.8 dBTP）
-- 重建：`./build.sh`（约 2.5 分钟）
+画面是 `scene.js`，配乐是 `score.py`。制作经验见 `../concentration_cell/LESSONS.md`（其中的旧路径已过时）。
+
+- 成片：`law_of_large_numbers.mp4`（1280×720 · 24fps · 60.4s）。不在 git 里，在 [Release `films-2026-09-30`](https://github.com/sunccchengze/Blockbuster/releases/tag/films-2026-09-30)。交付时记录约 −14.3 LUFS / −1.8 dBTP。这次整理没有重渲，也没有试听。
+- 旁白：`narration/s1.flac`–`s6.flac`（voice-01）
+- 重建：`bash examples/law_of_large_numbers/build.sh`
 
 | 时间 | 内容 |
 |---|---|
@@ -13,7 +15,4 @@
 | 43.0–47.7 | 3D 骰子 + 点数直方图，平均值→3.5 |
 | 48.1–59.0 | 偏差被稀释而非补偿（2/n 表）；蒙特卡洛撒点估计 π；片尾公式 |
 
-## 配乐（v2 重制）
-- `score.py` — 分场景配乐：弦乐群/钢琴/定音鼓/鼓组/钟琴 + 与画面同步的音效，混响 + 人声闪避（引擎：`~/scorelib.py`）
-- 替换音轨：`python3 score.py && bash ~/remux.sh <视频>.mp4 mix.wav`（画面不重渲染，响度对齐 −14 LUFS）
-- 旧的 music.js 已删除；build.sh 中的配乐步骤已被 score.py 取代
+只换音轨：`python3 examples/law_of_large_numbers/score.py`，再 `python3 -m bb remux`。不要调用已删除的 `music.js`。

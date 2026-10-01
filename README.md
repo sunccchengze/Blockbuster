@@ -1,43 +1,116 @@
-# Blockbuster — 内容优先的代码驱动视频工具箱
+# Blockbuster
 
-> 旧版"输入一句话、12 秒出片"的通用流水线已**废弃**：它按关键词套 5 套配色，所有主题共用同一个粒子场景，
-> 没有旁白、字幕和真实内容，质检只测响度和分辨率，所以只能产出好看但空洞、没有信息量的画面。
->
-> 新版思路：**不存在能通吃所有主题的模板。** 由 Agent 按流程做：研究 → 脚本 → 配音 → 为这个主题专门写 3D 场景 → 按场景写配乐 → 看图质检。
-> 仓库提供可复用的零件（渲染引擎、模型、配乐引擎、质检工具）和制作规范（[`skills/blockbuster/SKILL.md`](skills/blockbuster/SKILL.md)）。
+用代码做讲解视频的工具箱。画面由程序逐帧渲染，配乐由程序合成，旁白是事先录好的 FLAC。
+
+没有“输入一句话、12 秒出片”的通用流水线。那套按关键词套模板的管线已经废弃，不在当前代码里，也不要恢复。每部片都要单独研究、写场景、写配乐。仓库提供可复用的零件和制作规范（[`skills/blockbuster/SKILL.md`](skills/blockbuster/SKILL.md)）。
 
 ## 目录
+
 ```
-bb/                       Python 工具包
-  render3d.py             3D 引擎：透视相机/轨道运镜、网格(旋转体/方块/球/合并)、平面光照+边缘光、
-                          画家算法分层、粒子、地球+经纬网+遮挡、3D 标签(自动收进画面+防碰撞)、逐句字幕、章节进度
-  assets.py               可复用低多边形模型（星舰、猎鹰、汽车…），按需扩充
-  timeline.py             以实测旁白时长生成时间线、逐句字幕切分
-  score.py                配乐引擎：弦乐群/钢琴/大提琴断奏/拨弦/钟琴/定音鼓/鼓组 + 20 余种同步音效 + 混响 + 人声闪避
-  media.py                ffmpeg 自举、多进程并行渲染、换音轨 + −14 LUFS 对齐、接触单
-  qc.py                   内容质检：缺字形、文字出画/重叠、字幕长度/字速、响度/峰值、抽样静帧
+bb/                          Python 工具包
+  render3d.py                3D 引擎：相机、网格、光照、字幕、3D 标签
+  assets.py                  低多边形模型
+  timeline.py                按实测旁白时长建时间线
+  score.py                   配乐和音效
+  media.py                   ffmpeg、并行渲染、换音轨
+  qc.py                      内容质检
+  fonts.py                   中文字体查找
 examples/
-  musk/                   三分钟人物传记（Python 3D，完整新流程，build.sh 一键重建）
-  concentration_cell/ law_of_large_numbers/ bohr_resonance/ pinn/
-                          60 秒理科讲解（旧版 node canvas 场景 scene.js + 新版 score.py 配乐）
-skills/blockbuster/SKILL.md   制作规范（Agent 必读）
-MEMORY.md                 经验、坑和用户偏好
+  musk/                      三分钟人物传记（Python 3D，film.py）
+  concentration_cell/        浓差电池（旧版 node 场景 scene.js + score.py）
+  law_of_large_numbers/      大数定律
+  bohr_resonance/            波尔共振
+  pinn/                      PINN
+  每个样例的 narration/*.flac 是旁白，入库，用来重建
+skills/blockbuster/SKILL.md  制作规范
+tools/                       ensure_ff.sh、node 场景的字体/ffmpeg 查找、旧场景重建脚本
+MEMORY.md                    经验、坑、用户偏好
 ```
+
+成片 mp4 不进 git。下载地址：[Release `films-2026-09-30`](https://github.com/sunccchengze/Blockbuster/releases/tag/films-2026-09-30)。
+
+完整克隆仍会下载历史里的旧演示和 zip。当前版本不再包含这些文件。只要现在的代码，用浅克隆：`git clone --depth 1`。
+
+## 安装
+
+Python 3.9+。在仓库根目录：
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+中文字体是 Noto Sans CJK。Debian/Ubuntu：
+
+```bash
+sudo apt install fonts-noto-cjk
+```
+
+没有系统包时，把字体目录指给 `BB_FONT_DIR`。目录里要有下面任一命名：
+
+- `NotoSansCJK-Bold.ttc` 和 `NotoSansCJK-Regular.ttc`
+- `NotoSansCJKsc-Bold.otf` 和 `NotoSansCJKsc-Regular.otf`
+
+也可以分别设置 `BB_FONT_BOLD`、`BB_FONT_REGULAR`。
+
+ffmpeg 不必单独安装。`bb` 会用 PATH 里的 ffmpeg，或 `imageio-ffmpeg` 自带的二进制。也可以设置 `BB_FFMPEG`。
+
+四个旧 node 场景还需要：
+
+```bash
+npm install
+```
+
+依赖是 `@napi-rs/canvas`。想把 ffmpeg 放进当前 shell 的 PATH，可以 `source tools/ensure_ff.sh`（必须 source，不要直接执行）。
 
 ## 快速上手
-```bash
-export PYTHONPATH=~/Blockbuster
-python3 -m bb still  examples/musk/film.py 30 112        # 导出任意时刻静帧（文件名带随机后缀，避免读图缓存）
-python3 -m bb render examples/musk/film.py out.mp4 --jobs 2
-python3 -m bb qc     examples/musk/film.py out.mp4        # 内容质检 + 接触单
-python3 -m bb remux  video.mp4 mix.wav                   # 换音轨并对齐 −14 LUFS
-bash examples/musk/build.sh                              # 整片：渲染 → 配乐 → 封装 → 质检（约 2.5 分钟，2 核）
-```
-依赖：`numpy pillow scipy fonttools imageio-ffmpeg`（`bb.media.ffmpeg()` 会自动安装并链接 ffmpeg），字体 Noto Sans CJK。
-旧版 node 场景需要 `npm install`（@napi-rs/canvas）。
 
-## 写一部新片
-1. 按 SKILL.md 做 brief/研究/脚本 → 分段配音 → 实测时长。
-2. 新建 `examples/<name>/film.py`：`from bb.render3d import *`，每段写一个 `scene(lt, dur) -> Fr`，最后 `FILM = Film(starts, durs, scenes, subs, chapters)`。
-3. `score.py`：`from bb.score import *` → `buses(T)` → 按场景写配乐和音效 → `finish(...)`。
-4. `python3 -m bb qc` 直到 0 问题，再**亲自看**接触单和关键帧。
+在仓库根目录、已激活虚拟环境时：
+
+```bash
+python3 -m bb still examples/musk/film.py 30
+python3 -m bb qc examples/musk/film.py
+python3 examples/concentration_cell/score.py
+```
+
+- `still` 把指定秒的静帧写到当前目录，文件名带时间后缀，避免读图缓存。
+- `qc` 不传成片时，只检查字形、字幕和文字出画/重叠，不检查响度。
+- `score.py` 把混音写到该样例目录的 `mix.wav`（已在 `.gitignore` 里）。
+
+其他命令：
+
+```bash
+python3 -m bb render examples/musk/film.py out.mp4 --jobs 2
+python3 -m bb remux video.mp4 mix.wav
+python3 -m bb qc examples/musk/film.py out.mp4
+```
+
+`render` 和带成片的 `qc` 会比较慢。这台机器按 2 核估算，马斯克整片大约几分钟，不是几秒。
+
+## 重建每部片
+
+旁白已经在 `examples/<name>/narration/`。成片默认写在样例目录里，不入库。
+
+| 样例 | 成片文件名 | 命令 | 说明 |
+|---|---|---|---|
+| musk | `musk_3min.mp4` | `bash examples/musk/build.sh` | Python 3D。渲染、混音、封装、质检 |
+| concentration_cell | `concentration_cell_nernst.mp4` | `bash examples/concentration_cell/build.sh` | node 场景，需要 `npm install` |
+| law_of_large_numbers | `law_of_large_numbers.mp4` | `bash examples/law_of_large_numbers/build.sh` | 同上 |
+| bohr_resonance | `bohr_resonance.mp4` | `bash examples/bohr_resonance/build.sh` | 同上 |
+| pinn | `pinn_explained.mp4` | `bash examples/pinn/build.sh` | 同上。画面读 `train_data.json`，不必重训 |
+
+只换音轨、不重渲画面：
+
+```bash
+python3 examples/<name>/score.py
+python3 -m bb remux 成片.mp4 examples/<name>/mix.wav
+```
+
+旧的 `music.js`、`scorelib.py`、`remux.sh` 已删除。配乐用 `bb.score`，换音轨用 `python3 -m bb remux`。
+
+## 新片
+
+按 [`skills/blockbuster/SKILL.md`](skills/blockbuster/SKILL.md)。要点：标准普通话，只用 voice-01；旁白里不要写希腊字母符号；必须有真正的 3D 场景和逐句字幕；配乐跟画面走。这个仓库不包含 TTS，新旁白要在外面用 voice-01 生成后再放进 `narration/`。
+
+交付前 `python3 -m bb qc` 必须是 0 问题，并且要看接触单和关键帧。qc 查的是字形、版面、字幕时长和（有成片时）响度，不代替看图。

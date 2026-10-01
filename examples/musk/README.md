@@ -1,5 +1,8 @@
-# 三分钟了解马斯克（信息截至 2026-09-30）
-- musk_3min.mp4 — 成片（3:14，1280×720，逐句字幕，−14.3 LUFS）
-- narration/s1–s8.flac — 旁白（voice-01）
-- 代码已迁入仓库：~/Blockbuster/examples/musk/（film.py 画面、score.py 配乐、build.sh 一键重建）
-  重建：bash ~/Blockbuster/examples/musk/build.sh
+# 三分钟了解马斯克
+
+信息截至 2026-09-30。下次改这部片或做续集，必须重新搜索，不要把当时的数字当成最新事实。要点记在仓库根目录 `MEMORY.md`。
+
+- 成片：`musk_3min.mp4`（3:14，1280×720，逐句字幕）。不在 git 里，在 [Release `films-2026-09-30`](https://github.com/sunccchengze/Blockbuster/releases/tag/films-2026-09-30)。整理时记录的响度约 −14.3 LUFS。这次整理没有重渲整片，也没有试听。
+- `narration/s1.flac`–`s8.flac`：旁白，voice-01。
+- `film.py`：3D 场景。`score.py`：配乐，旁白默认读本目录的 `narration/`。
+- 重建：在仓库根目录执行 `bash examples/musk/build.sh`。成片写到本目录，可用第一个参数改输出路径。

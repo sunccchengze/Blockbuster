@@ -1,9 +1,10 @@
 # 波尔共振实验 · 60 秒 3D 教学动画
-沿用同一管线（见 ../concentration_cell/LESSONS.md）：voice-01 配音、确定性渲染、电钢琴配乐 + 侧链闪避。
-摆轮运动由 RK4 数值积分真实求解 θ'' + 2βθ' + ω₀²θ = ω₀²θd(t)（T₀ = 1.6 s），画面、曲线、读数全部来自同一组仿真数据。
 
-- 成片：`bohr_resonance.mp4`（1280×720 · 24fps · 60.4s · −14.6 LUFS / −1.7 dBTP）
-- 重建：`./build.sh`
+画面是 `scene.js`，配乐是 `score.py`。摆轮运动由 RK4 数值积分求解 θ'' + 2βθ' + ω₀²θ = ω₀²θd(t)（T₀ = 1.6 s）。画面、曲线、读数来自同一组仿真数据。
+
+- 成片：`bohr_resonance.mp4`（1280×720 · 24fps · 60.4s）。不在 git 里，在 [Release `films-2026-09-30`](https://github.com/sunccchengze/Blockbuster/releases/tag/films-2026-09-30)。交付时记录约 −14.6 LUFS / −1.7 dBTP。这次整理没有重渲，也没有试听。
+- 旁白：`narration/s1.flac`–`s6.flac`（voice-01）
+- 重建：`bash examples/bohr_resonance/build.sh`
 
 | 时间 | 内容 |
 |---|---|
@@ -14,7 +15,4 @@
 | 41.8–50.1 | 运动方程 Jθ̈ + bθ̇ + kθ = M₀cosωt，稳态振幅与 tanφ |
 | 50.5–58.9 | 三种阻尼的幅频、相频曲线 |
 
-## 配乐（v2 重制）
-- `score.py` — 分场景配乐：弦乐群/钢琴/定音鼓/鼓组/钟琴 + 与画面同步的音效，混响 + 人声闪避（引擎：`~/scorelib.py`）
-- 替换音轨：`python3 score.py && bash ~/remux.sh <视频>.mp4 mix.wav`（画面不重渲染，响度对齐 −14 LUFS）
-- 旧的 music.js 已删除；build.sh 中的配乐步骤已被 score.py 取代
+只换音轨：`python3 examples/bohr_resonance/score.py`，再 `python3 -m bb remux`。不要调用已删除的 `music.js`。
