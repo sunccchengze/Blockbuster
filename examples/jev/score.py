@@ -1,0 +1,80 @@
+"""Jev 讲解配乐：冷色电子脉冲为主，弦乐与钢琴随段落变化。每段注释即提示表。"""
+import os, sys
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(os.path.dirname(HERE))
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
+if HERE not in sys.path:
+    sys.path.insert(0, HERE)
+import film as r3d
+from bb.explain_score import *
+Q = Cues(r3d); mus, sfx = Q.mus, Q.sfx
+# 1 开场：低弦铺底 → 核心亮起钟琴 → 人群计数滴答 → 决策灯 blip
+k = 0; e = Q.E(k); t0 = Q.G(k, 0)
+chord_strings(t0, e[2], [38, 50, 57, 62], 0.5, 1.2, 0.8, 0.9)
+Q.sparkle(t0 + 0.5, [74, 79, 81, 86], 0.4)
+add(sfx, e[2] - 0.3, riser(1.0, 0.3))
+for j in range(40): add(sfx, e[2] + j * 0.055, tick(0.3, 2400 + j * 25))
+Q.groove(e[3], Q.end(k), 112, [Dm, Bb, F, C], 0.4, 0.55, snare_v=0.15)
+add(sfx, e[3], whoosh(0.7, 400, 3000, 0.25)); add(sfx, e[3] + 1.8, zap(0.25)); add(sfx, e[3] + 2.0, blip(1320, 0.4))
+# 2 System One：钢琴分解（思考感）→ 杰文斯：律动
+k = 1; e = Q.E(k)
+Q.piano_arp(Q.G(k, 0), e[5], 84, [Am, F, C, G_], 0.38)
+for q in range(12): add(sfx, e[2] + q * 0.5, blip(700 + 60 * (q % 4), 0.15), pan=0.5)
+add(mus, e[4] + 0.1, timpani(45, 0.6)); Q.sparkle(e[4] + 0.2, [76, 81, 84], 0.4)
+add(sfx, e[5], whoosh(0.7, 300, 2500, 0.25))
+Q.groove(e[5], Q.end(k), 116, [C, G_], 0.4, 0.6, snare_v=0.2)
+# 3 接口：大提琴断奏推进 → 三原语各一声 → 并行光束：明亮弦乐
+k = 2; e = Q.E(k)
+Q.cello(Q.G(k, 0), e[7], 120, [45, 41, 36, 43], 0.45)
+Q.pad(Q.G(k, 0), e[7], [Am, F, C, G_], 0.3)
+for j in range(4): add(sfx, e[2] + j * 0.25, blip(900 + j * 150, 0.3))
+for i_, m in zip((4, 5, 6), (79, 83, 86)): add(mus, e[i_] + 0.1, bell(m, 0.45))
+add(sfx, e[7], whoosh(0.8, 300, 3000, 0.3))
+Q.groove(e[7], Q.end(k), 124, [F, C, G_, Am], 0.45, 0.7, snare_v=0.2)
+# 4 出答案：逐 token 滴答 vs 一次脉冲 → 价格硬币 → 赛跑鼓点
+k = 3; e = Q.E(k)
+Q.pad(Q.G(k, 0), e[3], [Em, C], 0.35)
+for q in range(10): add(sfx, e[1] + q * 0.45, tick(0.4, 2000))
+add(sfx, e[2], zap(0.35)); add(mus, e[2] + 0.05, timpani(40, 0.6))
+Q.piano_arp(e[3], e[6], 96, [C, Am, F, G_], 0.35)
+for q in range(6): add(sfx, e[3] + 0.2 + q * 0.12, clink(0.35))
+add(sfx, e[6], riser(0.8, 0.3))
+Q.groove(e[6], Q.end(k), 140, [Dm, Bb, C, A7], 0.55, 0.8, snare_v=0.3)
+add(sfx, e[6] + 0.1, ping(2600, 0.4)); add(mus, e[7] + 0.3, timpani(38, 0.7))
+# 5 RLCD：庄重弦乐 → 校准点逐个钟琴 → 分流律动
+k = 4; e = Q.E(k)
+Q.pad(Q.G(k, 0), e[3], [F, C, Dm, Bb], 0.5)
+add(mus, Q.G(k, 0.3), timpani(41, 0.6))
+for q in range(10): add(mus, e[2] + q * 0.25, bell(72 + [0, 2, 4, 5, 7, 9, 11, 12, 14, 16][q], 0.3))
+Q.piano_arp(e[3], e[5], 90, [Am, Em, F, C], 0.35)
+add(sfx, e[5], whoosh(0.7, 300, 2500, 0.25))
+Q.groove(e[5], Q.end(k), 110, [C, G_, Am, F], 0.4, 0.6, snare_v=0.15)
+add(sfx, e[6], beep(660, 0.2, 0.3))
+# 6 零幻觉：球落槽 → 准确率柱 → 赛跑 → 前沿
+k = 5; e = Q.E(k)
+Q.pad(Q.G(k, 0), e[3], [Dm, A7], 0.4)
+add(sfx, e[1] + 1.2, thud(0.5)); add(sfx, e[2] + 0.2, beep(330, 0.25, 0.3))
+Q.cello(e[3], e[6], 112, [38, 46, 41, 45], 0.45); Q.pad(e[3], e[6], [Dm, Bb, F, A7], 0.3)
+add(mus, e[3] + 0.3, timpani(38, 0.6))
+add(sfx, e[6], riser(0.8, 0.3))
+Q.groove(e[6], e[8], 136, [Dm, Bb, C, A7], 0.5, 0.75, snare_v=0.3)
+add(sfx, e[8], whoosh(0.7, 2500, 300, 0.25))
+Q.piano_arp(e[8], Q.end(k), 92, [F, C, G_, C], 0.38)
+# 7 局限：悬疑低弦 + 故障音 → 矛盾：不和谐
+k = 6; e = Q.E(k)
+chord_strings(Q.G(k, 0), e[5], [40, 52, 55, 58, 64], 0.5, 0.8, 0.7, 0.8, trem=0.3)
+for i_ in range(1, 5): add(sfx, e[i_] + 0.1, glitch(0.25, 0.3))
+add(mus, Q.G(k, 0.2), timpani(40, 0.6))
+add(sfx, e[5], whoosh(0.7, 300, 2000, 0.25))
+Q.cello(e[5], Q.end(k), 104, [40, 41], 0.45)
+add(sfx, e[6] + 1.4, beep(370, 0.3, 0.35)); add(sfx, e[6] + 1.55, beep(392, 0.3, 0.3))
+# 8 定位 → 闸门 → 片尾
+k = 7; e = Q.E(k)
+Q.groove(Q.G(k, 0), e[4], 116, [C, G_, Am, F], 0.4, 0.6, snare_v=0.2)
+for q in range(4): add(sfx, e[2] + q * 0.3, blip(1000 + q * 100, 0.3))
+add(sfx, e[3] + 0.3, thud(0.5))
+add(sfx, e[4], riser(1.0, 0.3)); add(mus, e[4] + 0.05, timpani(36, 0.8))
+Q.sparkle(e[5], [72, 76, 79, 84, 88], 0.45)
+Q.ending(e[4], [F, G_, Am, G_])
+Q.finish(HERE)

@@ -57,7 +57,7 @@ const subTimes = [];
 SEG.forEach(([a, b], i) => { const L = SUBS[i].map(s => s.length); const T = L.reduce((x, y) => x + y); let t = a; SUBS[i].forEach((s, k) => { const d = (b - a) * L[k] / T; subTimes.push([t, t + d, s]); t += d; }); });
 
 // ---------- real training data (from train.py, PyTorch) ----------
-const DATA = JSON.parse(require('fs').readFileSync(__dirname + '/train_data.json', 'utf8'));
+const DATA = JSON.parse(require('zlib').gunzipSync(require('fs').readFileSync(path.join(__dirname, 'train_data.json.gz'))).toString('utf8'));
 const TT = DATA.t;
 function snapAt(run, p) { const S = DATA[run].snap, n = S.length; const x = clamp(p) * (n - 1), i = Math.floor(x), f = x - i; const a = S[i], b = S[Math.min(n - 1, i + 1)]; return a.map((v, k) => lerp(v, b[k], f)); }
 function stepAt(run, p) { const S = DATA[run].step, n = S.length; const x = clamp(p) * (n - 1), i = Math.floor(x), f = x - i; return Math.round(lerp(S[i], S[Math.min(n - 1, i + 1)], f)); }

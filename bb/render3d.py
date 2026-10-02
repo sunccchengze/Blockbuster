@@ -102,6 +102,9 @@ class Fr:
         P2, z = s.cam.proj(np.asarray(P, float)[None]); return P2[0][0] / SS, P2[0][1] / SS, z[0]
     def text(s, x, y, t, sz, col=(255,255,255), anc='la', bold=True, stroke=0, a=1.0):
         if a > 0.01: s.ov.append((x, y, t, sz, col, anc, bold, stroke, a))
+    def rect(s, x0, y0, x1, y1, rgba, r=0, outline=None, w=2):
+        """2D 面板（新闻包装条、数据卡片）：画在 3D 之上、文字之下。"""
+        s.ov.append(('rect', x0, y0, x1, y1, tuple(rgba), r, outline, w))
     def label(s, P, t, sz=26, col=(255,255,255), dx=30, dy=-40, a=1.0, dot=True):
         x, y, z = s.pt(P)
         if z > 0.5 and a > 0.01: s.ov.append(('lbl', x, y, dx, dy, t, sz, col, a, dot))
@@ -166,11 +169,16 @@ BOX_LOG = []       # qc 用：当前帧所有可见文字的包围盒 (x0,y0,x1,
 
 def draw_overlay(img, f, film, k, lt, fade):
     d = ImageDraw.Draw(img, 'RGBA'); BOX_LOG.clear()
+    for o in f.ov:                      # 0) 2D 面板
+        if o[0] != 'rect': continue
+        _, x0, y0, x1, y1, c, r, ol, w = o; c = (*c[:3], int(c[3] * fade))
+        ol = (*ol[:3], int(ol[3] * fade)) if ol else None
+        if x1 > x0 and y1 > y0: d.rounded_rectangle([x0, y0, x1, y1], r, fill=c, outline=ol, width=w)
     def hit(bx):
         return any(min(bx[2], o[2]) - max(bx[0], o[0]) > 0 and min(bx[3], o[3]) - max(bx[1], o[1]) > 0 for o in BOX_LOG)
     # 1) 普通文字（标题/数字/说明）先画并登记
     for o in f.ov:
-        if o[0] == 'lbl': continue
+        if o[0] in ('lbl', 'rect'): continue
         x, y, t, sz, col, anc, bold, st, a = o; TEXT_LOG.add(t)
         if sz < 6: continue
         if a * fade > 0.5: bb_ = d.textbbox((x, y), t, font=font(sz, bold), anchor=anc); BOX_LOG.append((*bb_, t))
