@@ -1,5 +1,0 @@
-numpy
-pillow
-scipy
-fonttools
-imageio-ffmpeg
