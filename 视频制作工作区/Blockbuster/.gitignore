@@ -1,0 +1,11 @@
+node_modules/
+.DS_Store
+__pycache__/
+*.tmp
+*.mp4
+*.wav
+still_*.png
+qc_*.png
+mix.wav
+.bin/
+.venv/
