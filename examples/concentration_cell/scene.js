@@ -5,7 +5,7 @@ const { createCanvas, GlobalFonts } = canvas();
 const { spawn } = require('child_process');
 GlobalFonts.registerFromPath(fontFile(false), 'CJK');
 GlobalFonts.registerFromPath(fontFile(true), 'CJKB');
-const W = 1280, H = 720, FPS = 24, DUR = 71.7;
+const W = 1280, H = 720, FPS = 24, DUR = 62.0;
 const FONT = '"CJK"', FONTB = '"CJKB"';
 
 // ---------- math ----------
@@ -28,25 +28,22 @@ if(small)ctx.font=`${Math.round(sz*0.62)}px ${m[2]}`;if(stroke)ctx.strokeText(t,
 ctx.textAlign=al;return w;}
 
 // ---------- timeline (from measured narration) ----------
-const SEG = [[0.8, 9.2], [9.6, 21.05], [21.45, 32.87], [33.27, 42.91], [43.31, 57.03], [57.43, 70.4]];
-// v4：第 5、6 段旁白重录变长。画面沿用原 60.4 s 时间轴，用分段线性映射 warp(t) 把新时间折算回原时间
-const WARP = [[0, 0], [43.31, 43.31], [50.0, 47.0], [56.6, 47.9], [57.43, 49.33], [65.4, 57.4], [66.0, 58.2], [71.7, 60.4]];
-function warp(t) { for (let i = 0; i < WARP.length - 1; i++) { const [a, A] = WARP[i], [b, B] = WARP[i + 1]; if (t <= b) return A + (B - A) * (t - a) / (b - a); } return 60.4; }
-let REAL_T = 0;
+const SEG = [[0.8, 9.2], [9.6, 21.05], [21.45, 32.87], [33.27, 42.91], [43.31, 50.33], [50.73, 61.9]];
 const SUBS = [
   ['两个烧杯，同样的铜电极和硫酸铜溶液，', '只是浓度不同。', '仅凭浓度差就能产生电压，', '这就是浓差电池。'],
   ['在稀溶液一侧，铜失去电子，变成铜离子进入溶液，', '这是负极，发生氧化。', '在浓溶液一侧，铜离子得到电子，析出为铜，', '这是正极，发生还原。'],
   ['电子经外电路从稀侧流向浓侧，', '盐桥中的离子迁移，维持电荷平衡。', '总反应的本质，', '就是把铜离子从浓溶液搬运到稀溶液。'],
   ['电压多大？看能斯特方程。', '浓差电池两极相同，E标准为零，', 'E 就等于 RT 除以 2F，', '乘以浓度比的自然对数。'],
-  ['在 25 ℃，按理想溶液计算，浓度比 100 : 1，', '理论电动势约为 0.059 伏。', '真实溶液并不理想，', '实测大约只有 0.03 伏。'],
-  ['随着放电进行，两侧浓度逐渐接近，电压不断降低。', '当浓度相等时，电动势归零，电池达到平衡。', '记住：浓度比决定电压，', '浓度差决定能放多少电。'],
+  ['浓度比一百比一，', '理想溶液理论值约零点零五九伏。', '这是动画模拟，不是实测。'],
+  ['放电时两侧浓度逐渐接近，电压降低；', '浓度相等，电池达到平衡。', '记住，浓度比决定电压，', '浓度差关联可释放的电量。'],
 ];
 const subTimes = [];
 SEG.forEach(([a, b], i) => { const L = SUBS[i].map(s => s.length); const T = L.reduce((x, y) => x + y); let t = a; SUBS[i].forEach((s, k) => { const d = (b - a) * L[k] / T; subTimes.push([t, t + d, s]); t += d; }); });
 
 // concentrations
-const DISCH = [49.6, 56.5];
+const DISCH = [51.0, 58.0];
 function conc(t) { const p = ease((t - DISCH[0]) / (DISCH[1] - DISCH[0])); return [lerp(0.01, 0.505, p), lerp(1.0, 0.505, p)]; }
+// Ideal-solution animation model only: concentration ratio approximates the activity ratio.
 function emf(t) { const [a, b] = conc(t); return 0.05916 / 2 * Math.log10(b / a); }
 
 // ---------- camera ----------
@@ -63,7 +60,7 @@ const KEYS = [ // t, pos, target
   [34.4, [-2, 26, 50], [12, 11, 0]],
   [48.9, [2, 25, 48], [12, 11, 0]],
   [57.0, [0, 27, 50], [12, 11, 0]],
-  [60.4, [0, 34, 60], [0, 12, 0]],
+  [62.0, [0, 34, 60], [0, 12, 0]],
 ];
 function camAt(t) {
   let i = 0; while (i < KEYS.length - 2 && t > KEYS[i + 1][0]) i++;
@@ -194,7 +191,7 @@ function voltmeter(ctx, t, E, show) {
   const cx = (lcd[0][0] + lcd[2][0]) / 2, cy = (lcd[0][1] + lcd[2][1]) / 2, hh = Math.abs(lcd[0][1] - lcd[2][1]);
   ctx.fillStyle = '#1b2419'; ctx.font = `${Math.round(hh * 0.5)}px ${FONTB}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.fillText(show ? E.toFixed(3) + ' V' : '0.000 V', cx, cy);
-  const lb = P([0, y0 + 0.75, z + 0.82]); ctx.fillStyle = '#2a1f05'; ctx.font = `${Math.round(hh * 0.28)}px ${FONTB}`; ctx.font = `${Math.round(hh * 0.26)}px ${FONTB}`; ctx.fillText(show ? '理论值 · 模拟' : 'V', lb[0], lb[1]);
+  const lb = P([0, y0 + 0.75, z + 0.82]); ctx.fillStyle = '#2a1f05'; ctx.font = `${Math.round(hh * 0.28)}px ${FONTB}`; ctx.fillText('V', lb[0], lb[1]);
 }
 
 function label3(ctx, p, lines, alpha, color = '#fff', size = 22, dx = 0) {
@@ -211,8 +208,8 @@ function rr(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arc
 function frac(ctx, x, y, num, den, size) { ctx.font = `${size}px ${FONT}`; const w = Math.max(ctx.measureText(num).width, ctx.measureText(den).width) + 10; ctx.textAlign = 'center'; ctx.fillText(num, x + w / 2, y - size * 0.55); ctx.fillText(den, x + w / 2, y + size * 0.6); ctx.fillRect(x, y - 1, w, 2); ctx.textAlign = 'left'; return w; }
 function txt(ctx, s, x, y, size, col, b) { ctx.font = `${size}px ${b ? FONTB : FONT}`; ctx.fillStyle = col; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; return fillRich(ctx,s, x, y); }
 function eqPanel(ctx, t) {
-  const A = win(t, 33.4, 49.0, 0.7); if (A <= 0) return;
-  const px = 690, py = 60, pw = 560, ph = 560;
+  const A = win(t, 33.4, 50.4, 0.7); if (A <= 0) return;
+  const px = 690, py = 70, pw = 550, ph = 500;
   ctx.globalAlpha = A; ctx.fillStyle = 'rgba(12,16,22,0.82)'; rr(ctx, px, py, pw, ph, 16); ctx.fill(); ctx.strokeStyle = 'rgba(120,190,255,0.5)'; ctx.lineWidth = 1.5; ctx.stroke();
   txt(ctx, '能斯特方程  Nernst Equation', px + 28, py + 38, 24, '#8fd0ff', true);
   const s = 30; let y = py + 100, x = px + 36;
@@ -230,26 +227,23 @@ function eqPanel(ctx, t) {
   x += txt(ctx, '= 0.0296 V × lg(1 / 0.01)', x, y, 28, '#fff');
   const a5 = clamp((t - 45.8) / 0.6); ctx.globalAlpha = A * a5;
   txt(ctx, ' ≈ 0.059 V', x, y, 30, '#ffe066', true);
-  ctx.globalAlpha = A * a5; txt(ctx, '↑ 理想溶液的理论值', px + 36, y + 30, 18, '#ffe066');
-  const a6 = clamp((REAL_T - 50.4) / 0.6); ctx.globalAlpha = A * a6;
-  txt(ctx, '真实溶液：γ±(1 mol/L) ≈ 0.042，γ±(0.01 mol/L) ≈ 0.41', px + 36, y + 58, 17, '#9fe0ff');
-  txt(ctx, '⇒ E ≈ 0.0296 V × lg(0.042 / 0.0041) ≈ 0.03 V', px + 36, y + 82, 17, '#9fe0ff');
-  txt(ctx, '另外还会叠加液接电势', px + 36, y + 106, 17, '#9fe0ff');
+  ctx.globalAlpha = A;
+  txt(ctx, '理想溶液近似 · 动画模拟值，非实测', px + 36, py + 468, 18, '#d8e4ef');
   ctx.globalAlpha = 1;
 }
 // ---- discharge graph panel ----
 function graphPanel(ctx, t) {
-  const A = win(t, 49.4, 58.2, 0.7); if (A <= 0) return;
+  const A = win(t, 50.8, 60.4, 0.7); if (A <= 0) return;
   const px = 690, py = 110, pw = 540, ph = 440; ctx.globalAlpha = A;
   ctx.fillStyle = 'rgba(12,16,22,0.82)'; rr(ctx, px, py, pw, ph, 16); ctx.fill(); ctx.strokeStyle = 'rgba(255,200,120,0.5)'; ctx.lineWidth = 1.5; ctx.stroke();
-  txt(ctx, '放电过程：浓度趋同，E → 0', px + 28, py + 38, 24, '#ffc57a', true);
+  txt(ctx, '理想模型模拟：浓度趋同，E → 0', px + 28, py + 38, 24, '#ffc57a', true);
   const gx = px + 70, gy = py + 90, gw = pw - 110, gh = 220;
   ctx.strokeStyle = '#8894a0'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(gx, gy); ctx.lineTo(gx, gy + gh); ctx.lineTo(gx + gw, gy + gh); ctx.stroke();
   txt(ctx, 'E / V', gx - 50, gy - 6, 18, '#aab'); txt(ctx, '时间', gx + gw - 40, gy + gh + 22, 18, '#aab');
   txt(ctx, '0.059', gx - 58, gy + 12, 16, '#aab'); txt(ctx, '0', gx - 20, gy + gh, 16, '#aab');
-  const ymap = E => gy + gh - E / 0.0592 * (gh - 12); txt(ctx, '理想溶液模型', gx + gw - 120, gy + 12, 16, '#ffe066');
+  const ymap = E => gy + gh - E / 0.0592 * (gh - 12);
   ctx.strokeStyle = '#ffe066'; ctx.lineWidth = 3; ctx.beginPath(); let last;
-  for (let k = 0; k <= 200; k++) { const tt = lerp(49.4, 58.0, k / 200); if (tt > t) break; const xx = gx + gw * k / 200, yy = ymap(emf(tt)); k ? ctx.lineTo(xx, yy) : ctx.moveTo(xx, yy); last = [xx, yy]; }
+  for (let k = 0; k <= 200; k++) { const tt = lerp(50.8, 60.2, k / 200); if (tt > t) break; const xx = gx + gw * k / 200, yy = ymap(emf(tt)); k ? ctx.lineTo(xx, yy) : ctx.moveTo(xx, yy); last = [xx, yy]; }
   ctx.stroke(); if (last) { ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(last[0], last[1], 5, 0, 6.283); ctx.fill(); }
   const [cl, cr] = conc(t);
   txt(ctx, `c稀 = ${cl.toFixed(3)} mol/L`, px + 36, py + 360, 24, '#bfe6ff'); txt(ctx, `c浓 = ${cr.toFixed(3)} mol/L`, px + 290, py + 360, 24, '#6fa8ff');
@@ -269,8 +263,7 @@ function subtitle(ctx, t) {
 }
 
 // ---------- frame ----------
-function render(ctx, tReal) {
-  REAL_T = tReal; const t = warp(tReal);
+function render(ctx, t) {
   setCam(t);
   background(ctx);
   const [cl, cr] = conc(t), E = emf(t), flow = E / 0.0592;
@@ -325,25 +318,22 @@ function render(ctx, tReal) {
   for (let b = 0; b < 2; b++) beakerFront(ctx, BK[b].x);
   // arrow label for electron flow
   // 3D labels
-  label3(ctx, [-9, -1.8, 5], [`c稀 = ${cl.toFixed(cl < 0.1 ? 2 : 3)} mol/L CuSO₄`], win(t, 2.5, 9.6) + win(t, 49.4, 60.5), '#bfe6ff', 20);
-  label3(ctx, [9, -1.8, 5], [`c浓 = ${cr.toFixed(cr > 0.99 ? 1 : 3)} mol/L CuSO₄`], win(t, 3.0, 9.6) + win(t, 49.4, 60.5), '#6fa8ff', 20);
+  label3(ctx, [-9, -1.8, 5], [`c稀 = ${cl.toFixed(cl < 0.1 ? 2 : 3)} mol/L CuSO₄`], win(t, 2.5, 9.6), '#bfe6ff', 20);
+  label3(ctx, [9, -1.8, 5], [`c浓 = ${cr.toFixed(cr > 0.99 ? 1 : 3)} mol/L CuSO₄`], win(t, 3.0, 9.6), '#6fa8ff', 20);
   label3(ctx, [-9, 14.5, 3], ['负极（阳极）· 氧化', 'Cu → Cu²⁺ + 2e⁻'], win(t, 11.0, 16.0) + win(t, 22.6, 33.0) * 0.9, '#ff9a8a', 22);
   label3(ctx, [9, 14.5, 3], ['正极（阴极）· 还原', 'Cu²⁺ + 2e⁻ → Cu'], win(t, 16.8, 21.3) + win(t, 22.6, 33.0) * 0.9, '#8affc1', 22);
   label3(ctx, [0, 18.4, 1.5], ['盐桥 KNO₃：NO₃⁻ → 稀侧，K⁺ → 浓侧'], win(t, 25.2, 33.0), '#9ff0b8', 20);
   label3(ctx, [0, 29.8, -1], ['e⁻：稀侧 → 外电路 → 浓侧'], win(t, 22.6, 27.5), '#ffe066', 20);
   label3(ctx, [0, 30.2, -1], ['总反应：Cu²⁺(浓) → Cu²⁺(稀)'], win(t, 28.3, 33.0), '#ffe066', 24);
   eqPanel(ctx, t); graphPanel(ctx, t);
-  { const A = clamp((t - 6.6) / 0.6) * (1 - clamp((t - 58.2) / 0.5)); if (A > 0) { ctx.globalAlpha = A; ctx.fillStyle = 'rgba(10,12,16,0.72)'; rr(ctx, 24, 24 + (t < 3.4 ? 120 : 0), 330, 34, 8); ctx.fill(); txt(ctx, '电压表读数：理想溶液理论值（动画模拟）', 36, 41 + (t < 3.4 ? 120 : 0), 16, '#ffe066'); ctx.globalAlpha = 1; } }
   // title
   const tA = win(t, 0.2, 3.2, 0.6);
   if (tA > 0) { ctx.globalAlpha = tA; txt(ctx, '浓差电池与能斯特方程', 48, 60, 40, '#fff', true); txt(ctx, 'Concentration Cell · Nernst Equation', 50, 102, 20, '#9fb3c8'); ctx.globalAlpha = 1; }
+  const noteA = clamp((t - 2.8) / 0.6) * clamp((60.6 - t) / 0.6);
+  if (noteA > 0) { ctx.globalAlpha = noteA; ctx.fillStyle = 'rgba(0,0,0,0.7)'; rr(ctx, 40, 122, 510, 38, 8); ctx.fill(); txt(ctx, '理想溶液理论值（动画模拟，非实测）', 54, 141, 18, '#ffe066', true); ctx.globalAlpha = 1; }
   const eA = clamp((t - 58.2) / 0.8);
-  if (eA > 0) { ctx.globalAlpha = eA * 0.6; ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); ctx.globalAlpha = eA; ctx.textAlign = 'center'; txt; ctx.font = `46px ${FONTB}`; ctx.fillStyle = '#fff'; ctx.textBaseline = 'middle'; ctx.fillText('浓度比决定电压', W / 2, H / 2 - 60); ctx.font = `30px ${FONTB}`; ctx.fillStyle = '#bfe6ff'; ctx.fillText('浓度差决定能放多少电', W / 2, H / 2 - 6); ctx.font = `28px ${FONT}`; ctx.fillStyle = '#ffe066'; ctx.fillText('E = (0.0592 V / n) · lg(c浓 / c稀)', W / 2, H / 2 + 48); ctx.globalAlpha = 1; }
-  if (tReal < 70.6) subtitle(ctx, tReal);
-  // watermark：右下角，透明度 0.20–0.30 缓慢呼吸（周期 6 s），片头 1.5 s 后淡入
-  { const wa = clamp((tReal - 1.5) / 1.5) * (0.25 + 0.05 * Math.sin(tReal * 2 * Math.PI / 6));
-    ctx.globalAlpha = wa; ctx.font = `15px ${FONT}`; ctx.fillStyle = '#ffffff'; ctx.textAlign = 'right'; ctx.textBaseline = 'alphabetic';
-    ctx.fillText('动画制作：孙承泽', W - 22, H - 16); ctx.globalAlpha = 1; }
+  if (eA > 0) { ctx.globalAlpha = eA * 0.6; ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); ctx.globalAlpha = eA; ctx.textAlign = 'center'; txt; ctx.font = `46px ${FONTB}`; ctx.fillStyle = '#fff'; ctx.textBaseline = 'middle'; ctx.fillText('浓度比决定电压；浓度差关联可释放的电量', W / 2, H / 2 - 30); ctx.font = `28px ${FONT}`; ctx.fillStyle = '#ffe066'; ctx.fillText('理想溶液近似：E = (0.0592 V / n) · lg(c浓 / c稀)', W / 2, H / 2 + 30); ctx.globalAlpha = 1; }
+  if (t < 58.2) subtitle(ctx, t);
   // letterbox vignette
   const vg = ctx.createRadialGradient(W / 2, H / 2, H * 0.4, W / 2, H / 2, H * 0.95); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,0.45)'); ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
 }

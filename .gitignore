@@ -19,3 +19,10 @@ contact_sheet*.png
 examples/watch/frames/
 *.blend
 *.blend1
+
+# 例外：5 部交付成片入库（其余 mp4 仍忽略）
+!examples/concentration_cell/concentration_cell_nernst.mp4
+!examples/law_of_large_numbers/law_of_large_numbers.mp4
+!examples/bohr_resonance/bohr_resonance.mp4
+!examples/pinn/pinn_explained.mp4
+!examples/musk/musk_3min.mp4
