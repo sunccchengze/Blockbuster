@@ -1,79 +1,43 @@
 # MEMORY
 
-更新日期：2026-10-01。这是仓库里的经验记录，不是宣传。
+更新：2026-10-02。只留有效要求、维护状态和坑；项目索引见 [README](README.md)，来源与瘦身记录见 [docs/IMPORT.md](docs/IMPORT.md)。
 
-## 这个仓库现在是什么
+## 用户要求
 
-内容优先的代码驱动视频工具箱：`bb/` 引擎、`examples/` 五部样例、`skills/blockbuster/SKILL.md` 制作规范。
+- 内容优先，真正的 3D 场景、逐句字幕；不恢复已废弃的按关键词套模板流水线。
+- 配音：标准普通话、voice-01。旁白不直接写希腊字母符号；μ 写 `miu`，ε 写 `epsilon`，其余读英文名。
+- 原始 TTS 按“Karpathy 片语速 × 1.2”处理，即 `atempo≈1.22`。归档旁白已处理过，不重复加速。新旁白用 FLAC，历史 Opus 不转码冒充无损。
+- 配乐随画面变化，弦乐等多种乐器与氛围音效；禁止持续嗡鸣、单音垫底或刺耳转场。
+- 时效性内容先搜索并记录来源。归档新闻 / 人物脚本不是最新事实，本次没有重做事实核验。
+- 需求有歧义先用选择题确认。成片不入 Git、不上传 Release。不擅改仓库可见性，不 force push，不改写已有历史。
+- 用户要求尽量瘦身：ZIP 完全解压后可删，缓存和重复文件可删；保留功能与不可再生成的素材，不以有损降质换体积。
+- 用户已明确请求 MergePR，授权将本轮整理、瘦身改动提交到本会话分支并合并 PR。
+- 交付视频前 `bb qc` 必须 0 问题，并看接触单、关键帧及试听；没有做的检查如实说。
 
-旧的“通用 prompt→video”流水线（`src/`、`scripts/`、`code3d-demo/`、`video/`、DEVLOG、HANDOFF，以及“一句话 12 秒出片”的说法）已从当前树删除。原因：按关键词套模板，主题共用粒子场景，没有旁白和真实内容，质检只看技术参数。不要恢复。
+## 当前工程
 
-删除只发生在新提交里。历史里仍有这些大文件和 `浓差电池.zip`、工作区 `.zip`。不要为了清历史而 force push，除非用户明确改口。
+- `bb/` + `tools/` + `examples/` 13 个项目：5 个原样例、8 个恢复工程；85 段旁白保留。
+- 两个备份共 344 个条目完整解压并逐字节核对，原 ZIP 已删除；不保留第二套工程、旧副本和临时渲染结果。
+- Dan Koe / Karpathy 共用 `bb/figure3d.py`；6 份重复 take 文稿由 `script.TEXT` / `TAKES` 可精确再生成。
+- 54 份 FLAC 无损重压缩：采样率、声道、位深、采样数、原生 MD5 和解码 PCM SHA-256 全部一致；31 份 Opus 未动。
+- PINN 快照为 `examples/pinn/train_data.json.gz`，解压原文不变。普通网络 RMSE 0.57、PINN 0.004、反推 μ≈4.20 是原训练记录。渲染无需 PyTorch。
+- 新 Python 项目 build 默认两个渲染进程；Node 只依赖 canvas，与 Python 共用 ffmpeg。faster-whisper 仅在重新对齐 / 切分录音时安装。
+- 依赖、字体、Blender 本体、缓存、成片和中间帧不入库，运行时按 README 安装。Git 历史中的 ZIP 仍保留。
 
-## 用户硬性要求
+## 浓差电池 v4
 
-完整版在 SKILL.md 第 0 节。
+- 独立工程比包内 `Blockbuster/examples/` 新：同步 s5/s6、71.7 秒时间线、`warp(t)`、理想值标注和非理想性近似。
+- 原观众是大学物理化学；写实实验室。ln 与 lg 同时给出，2.303RT/F = 0.0592 V；负极绿色、正极红色。s4 对应自然对数，改读法须重录并重新计时。
+- 备份字幕写“实测约 0.03 V”，项目说明只是平均活度系数的量级估算，不含液接电势。重新交付前须核查来源并统一措辞，恢复不等于新科学审校。
 
-- 配音：标准普通话，只用 voice-01。第一轮试听的两个声音已被否决（不是普通话）。
-- 旁白里不要写希腊字母符号。μ 读作 “miu”，ε 读作 “epsilon”，其他字母读英文名。
-- 画面必须有真正的 3D 场景和逐句字幕，不能只是图片轮播或模板粒子。
-- 配乐要随画面事件变化，要有弦乐等多种乐器和氛围音效。禁止持续嗡鸣或单音垫底，禁止刺耳的转场音效。
-- 时效性题材必须先搜索，事实截止到当天，并记录来源。
-- 需求有歧义时先用选择题问。
-- 不要擅自改仓库公开/私有。不要 force push，不要改写已有历史。
-- 交付前 `bb qc` 为 0 问题，并且要看接触单和关键帧。没法试听就如实说，不要夸大。
+## 环境与质检
 
-## 样例
-
-旁白在 `examples/<name>/narration/*.flac`，入库。成片不入库。Release 标签 `films-2026-09-30` 已建，但 mp4 附件没传上去（`uploads.github.com` 连不上）。原片还在提交 `08b26af` 的 `.zip` 里。
-
-| 样例 | 时长 | 重建 |
-|---|---|---|
-| musk | 3:14 | `bash examples/musk/build.sh` |
-| concentration_cell | 60.4s | `bash examples/concentration_cell/build.sh` |
-| law_of_large_numbers | 60.4s | `bash examples/law_of_large_numbers/build.sh` |
-| bohr_resonance | 60.4s | `bash examples/bohr_resonance/build.sh` |
-| pinn | 60.4s | `bash examples/pinn/build.sh` |
-
-前四部理科片的画面仍是 node `scene.js`，配乐已改成 `score.py`。`music.js` 已不存在，不要在 build 里调用它。PINN 的曲线来自真实训练，结果在 `examples/pinn/train_data.json`：普通网络 RMSE 0.57，PINN 0.004，反推 μ = 4.20。渲染不需要 PyTorch。
-
-浓差电池制作时确认过：观众是大学物理化学；写实实验室；用户对当时的画面、字幕、配音满意。公式同时给出 ln 和 lg，并写明 2.303RT/F = 0.0592 V。负极导线绿色，正极红色。旁白 s4 仍按自然对数来念；若改成 lg，要重录并重新计时。当时只测了响度和真峰值，没有跑满六项声学门禁。经验原文在 `examples/concentration_cell/LESSONS.md`。
-
-## 环境
-
-- 依赖见 `requirements.txt`。Debian 的系统 Python 可能拒绝直接 pip，用仓库根的 `.venv`。
-- 字体：`fonts-noto-cjk`，或 `BB_FONT_DIR`。Noto CJK 缺 `✕ ⚠ ₃ ⁺ ⁻` 等字形（`✓` 和 `²` 有）。`bb qc` 会报。
-- ffmpeg：PATH、`BB_FFMPEG`，或 imageio-ffmpeg。不要再链到 `~/bin`。
-- 旧版 ffmpeg 不要用单遍 loudnorm。`bb remux` 用固定增益加 `alimiter`（限幅 0.8，给 AAC 过冲留余量）。
-- 画家算法：地面、道路、湖面必须 `f.layer()` 先画，否则会盖住建筑。
-- 长片用 `--jobs 2`。不要在内存里缓存整片帧。
-- 读图工具可能缓存同名图片。`bb still` 的文件名带后缀。
-
-## 马斯克片用过的事实（截至 2026-09-30）
-
-下次做时效题材必须重新搜索。下面不是“最新事实”，只是这部片当时用过的要点：
-
-- 2026-09-28 星舰 Flight 14 首次入轨，部署 26 颗 Starlink V3；星链在轨约 11,119 颗。
-- SpaceX 2026 年 6 月上市，估值约 2 万亿美元；2026-06-12 福布斯称马斯克成为首位万亿富翁。
-- 2026 年 2 月 SpaceX 收购 xAI（X 此前已并入 xAI）。
-- 2025 年 11 月特斯拉股东通过约 1 万亿美元薪酬方案。
-- 2026 年 9 月 Cybercab 在奥斯汀开始载客，共 45 辆。
-- 2026 年 5 月诉 OpenAI 案被陪审团驳回，马斯克将上诉。
-- 2026-09-29 白宫 AI 协议签署，马斯克坐在特朗普身旁。
-- 纪录片《Musk》（导演 Gibney）威尼斯首映，美国 2026-10-09 上映，马斯克称其为抹黑。
-
-## 2026-10-01 整理时实际跑过
-
-在仓库根目录新建 `.venv`，`pip install -r requirements.txt`。这台环境的 apt 装不上 `fonts-noto-cjk`，所以设置了 `BB_FONT_DIR`，指向 NotoSansCJKsc 的 Regular/Bold OTF。没有试听。
-
-- `python3 -m bb still examples/musk/film.py 30`：约 0.4 秒，写出静帧。看过这一帧：地球、1989 标注和底部字幕都在。
-- `python3 -m bb qc examples/musk/film.py`：输出 `QC 通过：无缺字形 / 字幕问题`。这条命令不传成片，所以没有检查响度，也没有接触单。
-- `python3 examples/concentration_cell/score.py`：写出 60.4 秒、48 kHz、立体声 `mix.wav`，峰值不是 0。没有听。
-- `node examples/concentration_cell/scene.js still 12`：在 `npm install` 之后能出静帧。没有重渲整片。
-- Release `films-2026-09-30` 已创建，但 `gh release upload` 连不上 `uploads.github.com`，mp4 附件是 0 个。
-
-## 可改进
-
-- 四个 node 场景还没迁到 `bb.render3d`。
-- `assets.py` 还可以加人物剪影、实验器材、图表组件。
-- `qc` 还不能比对 `film.py` 事件点和 `score.py` 重音时间。
+- Python 使用虚拟环境。字体用 Noto Sans CJK 或 `BB_FONT_DIR` / `BB_FONT_BOLD` / `BB_FONT_REGULAR`，不要写死家目录。
+- Noto CJK 缺部分上下标和符号（`✕ ⚠ ₃ ⁺ ⁻`），缺字形必须查。
+- ffmpeg 用 `BB_FFMPEG`、PATH 或 imageio-ffmpeg，不装重复 Node 二进制。
+- `bb remux` 用固定增益加 `alimiter=0.8`；旧版单遍 loudnorm 会漂移，AAC 峰值会过冲。
+- 画家算法：地面、道路、湖面先用 `f.layer()` 分层，否则遮住建筑。人物公共代码不复制到项目。
+- 长片默认 `--jobs 2`，不在内存缓存全片。Blender CPU 的 250 帧可能需约 4 小时，先预算、看低清帧；长任务使用后台进程工具。
+- 静帧换文件名避免缓存。Python `bb qc` 不支持 Node / Blender；不传成片时也不检查响度。
+- 前轮验证：8 部 Python 片的 61 个场景中点可渲染，4 个 Node 项目能出静帧，3 份混音可生成，Musk 无成片 QC 为 0 问题。没有运行 Blender、重渲整片、试听或重新核查新闻事实。
+- 合并前重新核对文件状态并补齐瘦身结果：9 项回归通过，54 份 FLAC PCM 一致，压缩训练数据与原始 Git 数据一致。详见整理记录。

@@ -44,10 +44,13 @@ function ffmpegBin() {
   if (process.env.BB_FFMPEG && fs.existsSync(process.env.BB_FFMPEG)) return process.env.BB_FFMPEG;
   const which = spawnSync('which', ['ffmpeg'], { encoding: 'utf8' });
   if (which.status === 0 && which.stdout.trim()) return which.stdout.trim();
-  const py = spawnSync('python3', ['-c', 'import imageio_ffmpeg; print(imageio_ffmpeg.get_ffmpeg_exe())'], { encoding: 'utf8' });
-  if (py.status === 0 && py.stdout.trim() && fs.existsSync(py.stdout.trim())) return py.stdout.trim();
-  const local = path.join(ROOT, 'node_modules', '@ffmpeg-installer', 'linux-x64', 'ffmpeg');
-  if (fs.existsSync(local)) return local;
+  // Python 构建本来就需要 imageio-ffmpeg，共用它，避免 Node 再下载一套二进制。
+  const venv = path.join(ROOT, '.venv', process.platform === 'win32' ? 'Scripts/python.exe' : 'bin/python');
+  for (const executable of [venv, 'python3']) {
+    if (executable === venv && !fs.existsSync(venv)) continue;
+    const py = spawnSync(executable, ['-c', 'import imageio_ffmpeg; print(imageio_ffmpeg.get_ffmpeg_exe())'], { encoding: 'utf8' });
+    if (py.status === 0 && py.stdout.trim() && fs.existsSync(py.stdout.trim())) return py.stdout.trim();
+  }
   throw new Error('找不到 ffmpeg。安装系统 ffmpeg，或 pip install imageio-ffmpeg，或设置 BB_FFMPEG。');
 }
 

@@ -1,11 +1,21 @@
+# 可重装依赖和本地缓存
 node_modules/
-.DS_Store
+.venv/
+.bin/
+.cache/
 __pycache__/
+*.py[cod]
+.DS_Store
+
+# 工作区备份和渲染产物不入库（训练数据 .json.gz 保留）
+*.zip
 *.tmp
 *.mp4
 *.wav
+mix.wav
 still_*.png
 qc_*.png
-mix.wav
-.bin/
-.venv/
+contact_sheet*.png
+examples/watch/frames/
+*.blend
+*.blend1

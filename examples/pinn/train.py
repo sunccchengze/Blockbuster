@@ -1,5 +1,6 @@
-# Real PINN training for damped oscillator u''+mu u'+k u=0 (mu=4,k=400,u0=1,v0=0). Saves snapshots to train_data.json
-import torch, json, numpy as np
+# Real PINN training for damped oscillator u''+mu u'+k u=0 (mu=4,k=400,u0=1,v0=0). Saves snapshots to train_data.json.gz
+import torch, json, gzip, numpy as np
+from pathlib import Path
 torch.manual_seed(123)
 d, w0 = 2.0, 20.0; mu_true, k = 2*d, w0**2
 def exact(t):
@@ -34,6 +35,7 @@ def run(physics, inverse=False, steps=20000, snaps=40):
     return out
 res = {'t': tg.tolist(), 'exact': [round(float(v),4) for v in exact(tg)], 'td': td.tolist(), 'ud': ud.tolist(), 'tc': tc.detach().view(-1).tolist(),
        'nn': run(False, steps=6000), 'pinn': run(True), 'inv': run(True, inverse=True)}
-json.dump(res, open('train_data.json','w'))
+with gzip.open(Path(__file__).with_name('train_data.json.gz'), 'wt', encoding='utf8', compresslevel=9) as f:
+    json.dump(res, f)
 for k2 in ['nn','pinn','inv']:
     s = np.array(res[k2]['snap'][-1]); print(k2, 'final L2 err', float(np.sqrt(np.mean((s-np.array(res['exact']))**2))), 'mu', res[k2]['mu'][-1])
